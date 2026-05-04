@@ -1,0 +1,48 @@
+name: hisaab
+description: "Hisaab — Personal Finance Tracker"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Navigation
+  go_router: ^14.6.2
+
+  # Network
+  dio: ^5.7.0
+
+  # Storage
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.3.3
+
+  # Fonts
+  google_fonts: ^6.2.1
+
+  # Date & Formatting
+  intl: ^0.19.0
+
+  # Utils
+  equatable: ^2.0.5
+
+  # Calendar
+  table_calendar: ^3.1.2
+
+  # Icons & UI
+  cupertino_icons: ^1.0.8
+  fl_chart: ^1.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

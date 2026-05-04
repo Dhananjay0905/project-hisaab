@@ -1,0 +1,251 @@
+// This is your Prisma schema file.
+// Run `prisma generate` after making changes.
+// Deploy with `prisma db push` (development) or `prisma migrate deploy` (production).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum DueType {
+  I_OWE      // Money I owe to someone
+  THEY_OWE   // Money someone owes me
+}
+
+enum RecurringFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  name                String
+  passwordHash        String
+  isVerified          Boolean   @default(false)
+  verificationToken   String?   @unique
+  verificationExpiry  DateTime?
+  resetToken          String?   @unique
+  resetTokenExpiry    DateTime?
+  // Email change — two-step verification tokens
+  pendingEmail        String?
+  emailChangeToken    String?   @unique   // Token emailed to current address
+  emailChangeExpiry   DateTime?
+  newEmailToken       String?   @unique   // Token emailed to new address
+  newEmailExpiry      DateTime?
+  currency            String    @default("USD")
+  currencySymbol      String    @default("$")
+  // Plain numeric — allows fast balance calculations
+  openingBalance      Decimal   @default(0) @db.Decimal(15, 2)
+  monthlyBudget       Decimal?  @db.Decimal(15, 2)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  refreshTokens       RefreshToken[]
+  categories          Category[]
+  transactions        Transaction[]
+  recurringTxns       RecurringTransaction[]
+  dues                Due[]
+  splits              Split[]
+  savings              Savings?
+  wishlistItems        WishlistItem[]
+
+  @@index([email])
+}
+
+model RefreshToken {
+  id          String    @id @default(cuid())
+  userId      String
+  token       String    @unique
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  replacedBy  String?   // Token rotation: id of the new token
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Category {
+  id           String          @id @default(cuid())
+  userId       String
+  name         String
+  emoji        String
+  type         TransactionType
+  isDefault    Boolean         @default(false)
+  monthlyLimit Decimal?        @db.Decimal(15, 2)  // Optional monthly spend cap (EXPENSE only)
+  createdAt    DateTime        @default(now())
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  recurringTxns RecurringTransaction[]
+
+  @@index([userId])
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  userId      String
+  categoryId  String?
+  // AES-256-GCM encrypted (stored as "iv:tag:ciphertext") — personal identifiers only
+  title       String
+  note        String?
+  // Plain numeric — safe to query/aggregate
+  amount      Decimal         @db.Decimal(15, 2)
+  type        TransactionType
+  date        DateTime
+  deletedAt   DateTime?       // Soft delete
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  splitParticipant SplitParticipant?
+
+  @@index([userId, date])
+  @@index([userId, type, deletedAt])
+  @@index([userId, deletedAt])
+}
+
+model RecurringTransaction {
+  id          String              @id @default(cuid())
+  userId      String
+  categoryId  String?
+  // Encrypted — personal identifier
+  title       String
+  // Plain numeric
+  amount      Decimal             @db.Decimal(15, 2)
+  type        TransactionType
+  frequency   RecurringFrequency
+  startDate   DateTime
+  nextDueDate DateTime
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, nextDueDate])
+}
+
+model Due {
+  id          String    @id @default(cuid())
+  userId      String
+  // Encrypted — personal identifiers
+  title       String
+  personName  String
+  note        String?
+  // Plain numeric
+  amount      Decimal   @db.Decimal(15, 2)
+  type        DueType
+  dueDate     DateTime?
+  isPaid      Boolean   @default(false)
+  paidAt      DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isPaid])
+  @@index([userId, deletedAt])
+}
+
+// ─── Savings (single record per user — manually managed pot) ─────────────────
+
+model Savings {
+  id                String    @id @default(cuid())
+  userId            String    @unique           // one record per user
+  // Plain numeric — manually entered by user, not linked to transactions
+  totalAmount       Decimal   @default(0) @db.Decimal(15, 2)
+  cashDeduction     Decimal   @default(0) @db.Decimal(15, 2) // cash kept physically
+  deductFromBalance Boolean   @default(false)  // show balance−savings on home page
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WishlistItem {
+  id                String    @id @default(cuid())
+  userId            String
+  // Encrypted — personal identifiers
+  title             String
+  link              String?   // optional product URL (not encrypted, not PII)
+  // Plain numeric
+  targetPrice       Decimal?  @db.Decimal(15, 2)
+  amountSaved       Decimal   @default(0) @db.Decimal(15, 2) // manually entered
+  emoji             String
+  deductFromSavings Boolean   @default(true)  // count against savings display
+  isPurchased       Boolean   @default(false)
+  purchasedAt       DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── Splits ───────────────────────────────────────────────────────────────────
+
+model Split {
+  id          String    @id @default(cuid())
+  userId      String
+  // Encrypted — personal identifier
+  title       String
+  note        String?
+  // Plain numeric — total bill amount
+  totalAmount Decimal   @db.Decimal(15, 2)
+  date        DateTime  @default(now())
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  participants SplitParticipant[]
+
+  @@index([userId])
+  @@index([userId, deletedAt])
+}
+
+model SplitParticipant {
+  id            String    @id @default(cuid())
+  splitId       String
+  // Encrypted — personal identifier
+  name          String
+  // Plain numeric — this person's share
+  amount        Decimal   @db.Decimal(15, 2)
+  hasPaid       Boolean   @default(false)
+  paidAt        DateTime?
+  // Optional link to auto-created income transaction
+  transactionId String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  split       Split        @relation(fields: [splitId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([splitId])
+}

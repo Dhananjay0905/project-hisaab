@@ -1,0 +1,143 @@
+# ════════════════════════════════════════════════════════════════════════════
+#  Hisaab — Project Monorepo .gitignore
+#  Covers: Node.js backend · Flutter/Dart frontend · Android · IDE files
+# ════════════════════════════════════════════════════════════════════════════
+
+
+# ─── OS / System ─────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+
+# ─── IDEs & Editors ──────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.swp
+*.swo
+*~
+.history/
+.atom/
+
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  BACKEND  (backend/)
+# ════════════════════════════════════════════════════════════════════════════
+
+# Node
+backend/node_modules/
+backend/dist/
+
+# Environment — NEVER commit real secrets
+backend/.env
+backend/.env.local
+backend/.env.*.local
+# .env.example IS committed (it shows keys, not values)
+
+# Prisma
+backend/prisma/migrations/dev.db
+backend/prisma/migrations/dev.db-journal
+# migrations/ folder itself is committed so the schema history is preserved
+
+# Build / cache
+backend/.cache/
+backend/coverage/
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  FRONTEND  (frontend/)
+# ════════════════════════════════════════════════════════════════════════════
+
+# Flutter / Dart
+frontend/.dart_tool/
+frontend/.pub-cache/
+frontend/.pub/
+frontend/build/
+frontend/coverage/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/**/doc/api/
+
+# Generated files
+frontend/**/*.g.dart
+frontend/**/*.freezed.dart
+
+# Symbolication / obfuscation artefacts
+frontend/app.*.symbols
+frontend/app.*.map.json
+
+# Stitch download cache (screen design assets — not source code)
+frontend/stitch_screens/
+
+# Utility scripts not needed in repo
+frontend/download_screens.ps1
+
+# ── Android ──────────────────────────────────────────────────────────────────
+frontend/android/.gradle/
+frontend/android/.kotlin/
+frontend/android/local.properties
+frontend/android/key.properties          # signing keystore config — keep secret
+frontend/android/app/debug/
+frontend/android/app/profile/
+frontend/android/app/release/
+frontend/android/captures/
+frontend/android/**/*.apk
+frontend/android/**/*.aab
+
+# ── iOS ──────────────────────────────────────────────────────────────────────
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/Flutter.framework
+frontend/ios/Flutter/Flutter.podspec
+frontend/ios/Flutter/.last_build_id
+frontend/ios/**/*.mode1v3
+frontend/ios/**/*.mode2v3
+frontend/ios/**/*.moved-aside
+frontend/ios/**/*.pbxuser
+frontend/ios/**/*.perspectivev3
+frontend/ios/**/xcuserdata/
+frontend/ios/.generated/
+frontend/ios/Flutter/App.framework
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/ephemeral/
+frontend/ios/Runner/GeneratedPluginRegistrant.*
+
+# ── macOS ─────────────────────────────────────────────────────────────────
+frontend/macos/Pods/
+frontend/macos/.symlinks/
+frontend/macos/Flutter/ephemeral/
+frontend/macos/Runner/GeneratedPluginRegistrant.*
+
+# ── Windows ──────────────────────────────────────────────────────────────────
+frontend/windows/flutter/generated_plugin_registrant.cc
+frontend/windows/flutter/generated_plugin_registrant.h
+frontend/windows/flutter/generated_plugins.cmake
+
+# ── Linux ────────────────────────────────────────────────────────────────────
+frontend/linux/flutter/generated_plugin_registrant.cc
+frontend/linux/flutter/generated_plugin_registrant.h
+frontend/linux/flutter/generated_plugins.cmake
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  ROOT-LEVEL artefacts that should NOT be committed
+# ════════════════════════════════════════════════════════════════════════════
+analysis_results.md
+ROADMAP.md
