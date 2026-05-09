@@ -10,14 +10,21 @@ import 'token_interceptor.dart';
 import 'package:flutter/foundation.dart';
 
 String get _fallbackUrl {
+  if (kReleaseMode) {
+    // Production Render URL
+    return 'https://project-hisaab-api.onrender.com/api';
+  }
+
   if (kIsWeb) {
     return 'http://localhost:3000/api';
   }
+
   if (defaultTargetPlatform == TargetPlatform.android) {
     // 192.168.29.104 is your PC's local network IP
     // This allows physical phones on the same Wi-Fi to reach your backend!
     return 'http://192.168.29.104:3000/api';
   }
+
   return 'http://localhost:3000/api'; // iOS and Desktop
 }
 
