@@ -8,6 +8,7 @@ class Category {
     required this.emoji,
     required this.type,
     required this.isDefault,
+    required this.excludeFromAnalytics,
     required this.createdAt,
     this.monthlyLimit,
   });
@@ -20,6 +21,10 @@ class Category {
   final String type;
 
   final bool isDefault;
+
+  /// When true, all transactions in this category are excluded from analytics.
+  final bool excludeFromAnalytics;
+
   final DateTime createdAt;
 
   /// Optional monthly spending cap (EXPENSE categories only, in ₹).

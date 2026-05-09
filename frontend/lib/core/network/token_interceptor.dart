@@ -25,6 +25,12 @@ class TokenInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    // Skip token injection for requests that explicitly opt out (e.g. refresh
+    // call and retried requests that already carry a fresh token in headers).
+    if (options.extra['skipInterceptor'] == true) {
+      return handler.next(options);
+    }
+
     // Don't inject token for auth endpoints
     if (_isAuthEndpoint(options.path)) {
       return handler.next(options);
@@ -74,7 +80,12 @@ class TokenInterceptor extends Interceptor {
       );
 
       final newAccessToken = refreshResponse.data['accessToken'] as String;
+      final newRefreshToken = refreshResponse.data['refreshToken'] as String?;
       await _storage.saveAccessToken(newAccessToken);
+      // CRITICAL: save the rotated refresh token — the old one is now revoked on the server.
+      if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
+        await _storage.saveRefreshToken(newRefreshToken);
+      }
 
       // Retry the original request
       final retryResponse = await _retry(err.requestOptions, newAccessToken);
@@ -90,13 +101,35 @@ class TokenInterceptor extends Interceptor {
         }
       }
       _pendingQueue.clear();
-    } catch (_) {
-      // Refresh failed — clear session and notify the app
-      await _storage.clearAll();
-      _pendingQueue.clear();
-      // Notify the app so it can redirect to login with an explanatory message
-      await onSessionExpired?.call();
-      handler.next(err);
+    } catch (e) {
+      // Distinguish between a real auth failure and a transient network error.
+      final isNetworkError = e is DioException &&
+          (e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout ||
+              e.type == DioExceptionType.sendTimeout ||
+              e.type == DioExceptionType.connectionError);
+
+      if (!isNetworkError) {
+        // Genuine auth failure (server explicitly rejected the refresh token).
+        // Clear session and notify the app.
+        await _storage.clearAll();
+        _pendingQueue.clear();
+        await onSessionExpired?.call();
+        handler.next(err);
+      } else {
+        // Network error during refresh (e.g. Render cold-start timeout).
+        // Keep tokens intact and reject with a network error — NOT the original
+        // 401. This causes getMe() to throw NetworkFailure, so auth_provider
+        // restores the user from cache rather than wiping the session.
+        _pendingQueue.clear();
+        handler.reject(
+          DioException(
+            requestOptions: err.requestOptions,
+            type: DioExceptionType.connectionError,
+            error: 'Network error during token refresh — session preserved.',
+          ),
+        );
+      }
     } finally {
       _isRefreshing = false;
     }
@@ -109,6 +142,9 @@ class TokenInterceptor extends Interceptor {
       queryParameters: options.queryParameters,
       options: Options(
         method: options.method,
+        // Bypass the interceptor so our fresh token is never overwritten by
+        // a storage read in onRequest.
+        extra: {...options.extra, 'skipInterceptor': true},
         headers: {...options.headers, 'Authorization': 'Bearer $token'},
       ),
     );

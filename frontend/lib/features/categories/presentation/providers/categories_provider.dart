@@ -47,6 +47,7 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
     required String emoji,
     required String type,
     double? monthlyLimit,
+    bool excludeFromAnalytics = false,
   }) async {
     final repo = ref.read(categoryRepositoryProvider);
     final newCategory = await repo.createCategory(
@@ -54,6 +55,7 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
       emoji: emoji,
       type: type,
       monthlyLimit: monthlyLimit,
+      excludeFromAnalytics: excludeFromAnalytics,
     );
     // Optimistic: append to current list
     state = state.whenData((list) => [...list, newCategory]);
@@ -65,6 +67,7 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
     String? name,
     String? emoji,
     Object? monthlyLimit,
+    bool? excludeFromAnalytics,
   }) async {
     final repo = ref.read(categoryRepositoryProvider);
     final updated = await repo.updateCategory(
@@ -72,6 +75,7 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
       name: name,
       emoji: emoji,
       monthlyLimit: monthlyLimit,
+      excludeFromAnalytics: excludeFromAnalytics,
     );
     state = state.whenData(
       (list) => list.map((c) => c.id == id ? updated : c).toList(),

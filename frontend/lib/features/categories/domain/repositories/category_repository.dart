@@ -13,6 +13,7 @@ abstract interface class CategoryRepository {
     required String emoji,
     required String type,
     double? monthlyLimit,
+    bool excludeFromAnalytics = false,
   });
 
   /// Updates name and/or emoji of an existing category.
@@ -22,6 +23,7 @@ abstract interface class CategoryRepository {
     String? name,
     String? emoji,
     Object? monthlyLimit,
+    bool? excludeFromAnalytics,
   });
 
   /// Deletes a custom category. Throws if default or has linked transactions.

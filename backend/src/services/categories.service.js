@@ -34,7 +34,7 @@ async function getCategories(userId) {
 /**
  * Creates a new custom category for the user.
  */
-async function createCategory(userId, { name, emoji, type, monthlyLimit }) {
+async function createCategory(userId, { name, emoji, type, monthlyLimit, excludeFromAnalytics }) {
   // Guard: duplicate name+type for this user
   const existing = await prisma.category.findFirst({
     where: { userId, name: name.trim(), type },
@@ -55,6 +55,7 @@ async function createCategory(userId, { name, emoji, type, monthlyLimit }) {
       type,
       isDefault: false,
       ...(monthlyLimit != null ? { monthlyLimit } : {}),
+      excludeFromAnalytics: excludeFromAnalytics === true,
     },
   });
 
@@ -67,7 +68,7 @@ async function createCategory(userId, { name, emoji, type, monthlyLimit }) {
  * Updates name and/or emoji of a category the user owns.
  * Type cannot be changed (would invalidate linked transactions).
  */
-async function updateCategory(userId, categoryId, { name, emoji, monthlyLimit }) {
+async function updateCategory(userId, categoryId, { name, emoji, monthlyLimit, excludeFromAnalytics }) {
   const category = await _findOwnedCategory(userId, categoryId);
 
   const updated = await prisma.category.update({
@@ -77,6 +78,7 @@ async function updateCategory(userId, categoryId, { name, emoji, monthlyLimit })
       ...(emoji ? { emoji: emoji.trim() } : {}),
       // null explicitly clears the limit; undefined = no change
       ...(monthlyLimit !== undefined ? { monthlyLimit: monthlyLimit ?? null } : {}),
+      ...(excludeFromAnalytics !== undefined ? { excludeFromAnalytics: Boolean(excludeFromAnalytics) } : {}),
     },
   });
 
@@ -126,6 +128,7 @@ function _formatCategory(c) {
     emoji: c.emoji,
     type: c.type,
     isDefault: c.isDefault,
+    excludeFromAnalytics: c.excludeFromAnalytics ?? false,
     monthlyLimit: c.monthlyLimit != null ? Number(c.monthlyLimit) : null,
     createdAt: c.createdAt,
   };

@@ -199,4 +199,28 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<bool> hasValidSession() => _storage.hasSession();
+
+  @override
+  Future<User?> getCachedUser() async {
+    try {
+      final userId = await _storage.getUserId();
+      final email = await _storage.getUserEmail();
+      final name = await _storage.getUserName();
+      final currency = await _storage.getCurrency();
+      final currencySymbol = await _storage.getCurrencySymbol();
+      if (userId == null || email == null || name == null) return null;
+      return User(
+        id: userId,
+        email: email,
+        name: name,
+        isVerified: true, // cached users are always verified
+        currency: currency ?? 'INR',
+        currencySymbol: currencySymbol ?? '₹',
+        openingBalance: 0,
+        createdAt: DateTime.now(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 }

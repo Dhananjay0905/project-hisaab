@@ -9,6 +9,7 @@ class TransactionCategoryModel extends TransactionCategory {
     required super.name,
     required super.emoji,
     required super.type,
+    super.excludeFromAnalytics = false,
   });
 
   factory TransactionCategoryModel.fromJson(Map<String, dynamic> json) {
@@ -17,6 +18,7 @@ class TransactionCategoryModel extends TransactionCategory {
       name: json['name'] as String,
       emoji: json['emoji'] as String,
       type: json['type'] as String,
+      excludeFromAnalytics: json['excludeFromAnalytics'] as bool? ?? false,
     );
   }
 }
@@ -30,6 +32,7 @@ class TransactionModel extends Transaction {
     required super.date,
     required super.createdAt,
     required super.updatedAt,
+    super.excludeFromAnalytics = false,
     super.note,
     super.categoryId,
     super.category,
@@ -40,10 +43,13 @@ class TransactionModel extends Transaction {
     return TransactionModel(
       id: json['id'] as String,
       title: json['title'] as String,
-      amount: (json['amount'] as num).toDouble(),
+      amount: json['amount'] is String
+          ? double.parse(json['amount'] as String)
+          : (json['amount'] as num).toDouble(),
       type: json['type'] as String,
       note: json['note'] as String?,
       categoryId: json['categoryId'] as String?,
+      excludeFromAnalytics: json['excludeFromAnalytics'] as bool? ?? false,
       category: catJson != null
           ? TransactionCategoryModel.fromJson(catJson as Map<String, dynamic>)
           : null,

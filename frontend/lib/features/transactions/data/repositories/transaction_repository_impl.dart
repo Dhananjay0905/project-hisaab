@@ -68,6 +68,7 @@ class TransactionRepositoryImpl {
     required DateTime date,
     String? note,
     String? categoryId,
+    bool excludeFromAnalytics = false,
   }) async {
     try {
       return await _remote.createTransaction(
@@ -77,6 +78,7 @@ class TransactionRepositoryImpl {
         date: date,
         note: note,
         categoryId: categoryId,
+        excludeFromAnalytics: excludeFromAnalytics,
       );
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message, fieldErrors: e.fieldErrors);
@@ -95,6 +97,7 @@ class TransactionRepositoryImpl {
     DateTime? date,
     String? note,
     String? categoryId,
+    bool? excludeFromAnalytics,
   }) async {
     try {
       return await _remote.updateTransaction(
@@ -105,6 +108,7 @@ class TransactionRepositoryImpl {
         date: date,
         note: note,
         categoryId: categoryId,
+        excludeFromAnalytics: excludeFromAnalytics,
       );
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message, fieldErrors: e.fieldErrors);

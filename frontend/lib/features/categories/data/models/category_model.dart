@@ -10,6 +10,7 @@ class CategoryModel extends Category {
     required super.emoji,
     required super.type,
     required super.isDefault,
+    required super.excludeFromAnalytics,
     required super.createdAt,
     super.monthlyLimit,
   });
@@ -21,6 +22,7 @@ class CategoryModel extends Category {
       emoji: json['emoji'] as String,
       type: json['type'] as String,
       isDefault: json['isDefault'] as bool? ?? false,
+      excludeFromAnalytics: json['excludeFromAnalytics'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
       monthlyLimit: (json['monthlyLimit'] as num?)?.toDouble(),
     );
@@ -32,6 +34,7 @@ class CategoryModel extends Category {
         'emoji': emoji,
         'type': type,
         'isDefault': isDefault,
+        'excludeFromAnalytics': excludeFromAnalytics,
         'monthlyLimit': monthlyLimit,
         'createdAt': createdAt.toIso8601String(),
       };

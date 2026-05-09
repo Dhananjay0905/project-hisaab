@@ -25,6 +25,7 @@ class CategoryRemoteDataSource {
     required String emoji,
     required String type,
     double? monthlyLimit,
+    bool excludeFromAnalytics = false,
   }) async {
     final response = await _client.post<Map<String, dynamic>>(
       ApiEndpoints.categories,
@@ -33,6 +34,7 @@ class CategoryRemoteDataSource {
         'emoji': emoji,
         'type': type,
         if (monthlyLimit != null) 'monthlyLimit': monthlyLimit,
+        'excludeFromAnalytics': excludeFromAnalytics,
       },
     );
     final data = response.data!['data'] as Map<String, dynamic>;
@@ -45,6 +47,7 @@ class CategoryRemoteDataSource {
     String? emoji,
     // Pass null to explicitly clear the limit; omit entirely if not changing.
     Object? monthlyLimit = _sentinel,
+    bool? excludeFromAnalytics,
   }) async {
     final response = await _client.put<Map<String, dynamic>>(
       ApiEndpoints.categoryById(id),
@@ -52,6 +55,7 @@ class CategoryRemoteDataSource {
         if (name != null) 'name': name,
         if (emoji != null) 'emoji': emoji,
         if (monthlyLimit != _sentinel) 'monthlyLimit': monthlyLimit,
+        if (excludeFromAnalytics != null) 'excludeFromAnalytics': excludeFromAnalytics,
       },
     );
     final data = response.data!['data'] as Map<String, dynamic>;

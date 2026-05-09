@@ -58,7 +58,8 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
   Future<AuthStatus> build() async {
     _repo = ref.watch(_authRepositoryProvider);
 
-    // Check stored session on startup
+    // Check stored session on startup — use refresh token as the
+    // persistence signal (access token expires in 15m; refresh in 30d).
     final hasSession = await _repo.hasValidSession();
     if (!hasSession) {
       _hasInitialized = true;
@@ -70,13 +71,19 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
       _hasInitialized = true;
       return AuthAuthenticated(user);
     } on AuthFailure {
+      // Server explicitly rejected the refresh token → real logout.
       await _repo.logout();
       _hasInitialized = true;
       return const AuthUnauthenticated();
     } catch (_) {
+      // ANY other error (network timeout, server error, parsing, etc.)
+      // → do NOT log out. Restore from cached session data.
       _hasInitialized = true;
+      final cached = await _repo.getCachedUser();
+      if (cached != null) return AuthAuthenticated(cached);
       return const AuthUnauthenticated();
     }
+
   }
 
   // ── Login ────────────────────────────────────────────────────────────────
@@ -144,6 +151,13 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
   Future<void> logout() async {
     state = const AsyncLoading();
     await _repo.logout();
+    state = const AsyncData(AuthUnauthenticated());
+  }
+
+  /// Snap state to Unauthenticated synchronously.
+  /// Used by the verify-email page's "Back to sign in" button so the
+  /// router stops redirecting back to /verify-email.
+  void goToLogin() {
     state = const AsyncData(AuthUnauthenticated());
   }
 

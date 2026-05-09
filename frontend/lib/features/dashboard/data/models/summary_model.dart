@@ -35,7 +35,9 @@ class SummaryModel extends Summary {
         return RecentTransaction(
           id: m['id'] as String,
           title: m['title'] as String,
-          amount: (m['amount'] as num).toDouble(),
+          amount: m['amount'] is String
+              ? double.parse(m['amount'] as String)
+              : (m['amount'] as num).toDouble(),
           type: m['type'] as String,
           date: DateTime.parse(m['date'] as String),
           categoryName: cat?['name'] as String?,

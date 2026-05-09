@@ -26,8 +26,18 @@ class CategoriesPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.surface,
-      body: CustomScrollView(
-        slivers: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(categoriesProvider);
+          try {
+            await ref.read(categoriesProvider.future);
+          } catch (_) {}
+        },
+        color: AppColors.primary,
+        backgroundColor: AppColors.surfaceContainerLowest,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           SliverAppBar(
             pinned: true,
             backgroundColor: AppColors.surface,
@@ -81,6 +91,7 @@ class CategoriesPage extends ConsumerWidget {
             },
           ),
         ],
+      ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddSheet(context, ref),
@@ -232,22 +243,6 @@ class _CategoryRow extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (category.isDefault) ...[
-                        const SizedBox(width: AppSpacing.xs),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainer,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            'Starter',
-                            style: AppTypography.labelSmall
-                                .copyWith(color: AppColors.onSurfaceVariant),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                   if (category.hasLimit)
@@ -267,6 +262,18 @@ class _CategoryRow extends ConsumerWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (category.excludeFromAnalytics)
+                  Tooltip(
+                    message: 'Excluded from analytics',
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Icon(
+                        Icons.bar_chart_outlined,
+                        size: 16,
+                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
                 IconButton(
                   icon: const Icon(Icons.edit_rounded, size: 18),
                   color: AppColors.onSurfaceVariant,
@@ -372,6 +379,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
   final _emojiController = TextEditingController();
   final _limitController = TextEditingController();
   String _selectedType = 'EXPENSE';
+  bool _excludeFromAnalytics = false;
   bool _saving = false;
 
   bool get _isEditing => widget.existing != null;
@@ -383,6 +391,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
       _nameController.text  = widget.existing!.name;
       _emojiController.text = widget.existing!.emoji;
       _selectedType = widget.existing!.type;
+      _excludeFromAnalytics = widget.existing!.excludeFromAnalytics;
       if (widget.existing!.hasLimit) {
         _limitController.text =
             widget.existing!.monthlyLimit!.toStringAsFixed(0);
@@ -541,6 +550,32 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
             if (_selectedType == 'INCOME')
               const SizedBox(height: AppSpacing.lg),
 
+            // ── Exclude from analytics ──────────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: SwitchListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md, vertical: 2),
+                title: Text(
+                  'Exclude from analytics',
+                  style: AppTypography.bodyMedium
+                      .copyWith(color: AppColors.onSurface),
+                ),
+                subtitle: Text(
+                  'Transactions in this category won\'t count toward totals or charts.',
+                  style: AppTypography.labelSmall
+                      .copyWith(color: AppColors.onSurfaceVariant),
+                ),
+                value: _excludeFromAnalytics,
+                activeThumbColor: AppColors.primary,
+                onChanged: (v) => setState(() => _excludeFromAnalytics = v),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
             // Save button
             SizedBox(
               width: double.infinity,
@@ -604,6 +639,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
               emoji: emoji,
               // Send null to clear limit if field was cleared; send value if set.
               monthlyLimit: limitText.isEmpty ? null : monthlyLimit,
+              excludeFromAnalytics: _excludeFromAnalytics,
             );
       } else {
         await widget.ref.read(categoriesProvider.notifier).addCategory(
@@ -611,6 +647,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
               emoji: emoji,
               type: _selectedType,
               monthlyLimit: monthlyLimit,
+              excludeFromAnalytics: _excludeFromAnalytics,
             );
       }
       if (mounted) Navigator.of(context).pop();

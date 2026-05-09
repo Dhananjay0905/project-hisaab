@@ -252,13 +252,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                   const TextInputType.numberWithOptions(
                                       decimal: true),
                               textInputAction: TextInputAction.done,
-                              prefixIcon: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.md),
-                                child: Text(
-                                  '₹',
-                                  style: AppTypography.titleMedium.copyWith(
-                                      color: AppColors.onSurfaceVariant),
+                              prefixIcon: Align(
+                                widthFactor: 1.0,
+                                heightFactor: 1.0,
+                                alignment: Alignment.center,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.md),
+                                  child: Text(
+                                    '₹',
+                                    style: AppTypography.titleMedium.copyWith(
+                                        color: AppColors.onSurfaceVariant),
+                                  ),
                                 ),
                               ),
                               inputFormatters: [

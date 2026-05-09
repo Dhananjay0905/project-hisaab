@@ -4,6 +4,11 @@
  * Computes the financial dashboard data for a user in a single efficient
  * Prisma $transaction call. All amounts are plain Decimal — no decryption
  * needed for aggregation. Only recentTransactions need title decryption.
+ *
+ * Exclusion rule:
+ *  A transaction is excluded from all summary aggregates if:
+ *   - The transaction itself has excludeFromAnalytics = true, OR
+ *   - The transaction's category has excludeFromAnalytics = true
  */
 
 const { PrismaClient } = require('@prisma/client');
@@ -20,8 +25,26 @@ async function getSummary(userId) {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-  const baseWhere = { userId, deletedAt: null };
-  const monthWhere = { userId, deletedAt: null, date: { gte: monthStart, lte: monthEnd } };
+  // ── Get excluded category IDs (category-level exclusion) ──────────────────
+  const excludedCats = await prisma.category.findMany({
+    where: { userId, excludeFromAnalytics: true },
+    select: { id: true },
+  });
+  const excludedCatIds = excludedCats.map((c) => c.id);
+
+  // Base exclusion filter appended to every aggregate query
+  const exclusionFilter = {
+    excludeFromAnalytics: false,
+    ...(excludedCatIds.length > 0
+      ? { categoryId: { notIn: excludedCatIds } }
+      : {}),
+  };
+
+  const baseWhere  = { userId, deletedAt: null, ...exclusionFilter };
+  const monthWhere = { userId, deletedAt: null, date: { gte: monthStart, lte: monthEnd }, ...exclusionFilter };
+
+  // Recent transactions are shown regardless of exclusion (user should see them)
+  const recentWhere = { userId, deletedAt: null };
 
   const [
     user,
@@ -34,21 +57,22 @@ async function getSummary(userId) {
     topCatsRaw,
   ] = await prisma.$transaction([
     prisma.user.findUnique({ where: { id: userId }, select: { openingBalance: true, currency: true, currencySymbol: true } }),
-    // All-time aggregates
+    // All-time aggregates (excluded txns not counted)
     prisma.transaction.aggregate({ where: { ...baseWhere, type: 'INCOME' }, _sum: { amount: true } }),
     prisma.transaction.aggregate({ where: { ...baseWhere, type: 'EXPENSE' }, _sum: { amount: true } }),
-    // This month aggregates
+    // This month aggregates (excluded txns not counted)
     prisma.transaction.aggregate({ where: { ...monthWhere, type: 'INCOME' }, _sum: { amount: true } }),
     prisma.transaction.aggregate({ where: { ...monthWhere, type: 'EXPENSE' }, _sum: { amount: true } }),
+    // Transaction count — only non-excluded
     prisma.transaction.count({ where: monthWhere }),
-    // Last 5 transactions with category
+    // Last 5 transactions (shown regardless of exclusion flag — user should see them)
     prisma.transaction.findMany({
-      where: baseWhere,
+      where: recentWhere,
       include: { category: { select: { id: true, name: true, emoji: true, type: true } } },
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       take: 5,
     }),
-    // Top EXPENSE categories this month by total amount
+    // Top EXPENSE categories this month (excluded txns/categories not counted)
     prisma.transaction.groupBy({
       by: ['categoryId'],
       where: { ...monthWhere, type: 'EXPENSE', categoryId: { not: null } },
@@ -93,6 +117,7 @@ async function getSummary(userId) {
     amount: parseFloat(tx.amount),
     type: tx.type,
     date: tx.date,
+    excludeFromAnalytics: tx.excludeFromAnalytics ?? false,
     category: tx.category
       ? { id: tx.category.id, name: tx.category.name, emoji: tx.category.emoji }
       : null,

@@ -58,6 +58,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
   late DateTime _selectedDate;
   TimeOfDay? _selectedTime;
   bool _isSubmitting = false;
+  bool _excludeFromAnalytics = false;
   String? _errorMessage;
 
   late AnimationController _typeAnimController;
@@ -76,6 +77,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
           edit.amount.truncateToDouble() == edit.amount ? 0 : 2);
       _titleController.text  = edit.title;
       _noteController.text   = edit.note ?? '';
+      _excludeFromAnalytics  = edit.excludeFromAnalytics;
       final local = edit.date.toLocal();
       if (local.hour != 0 || local.minute != 0) {
         _selectedTime = TimeOfDay(hour: local.hour, minute: local.minute);
@@ -189,6 +191,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
               date: finalDate,
               note: note,
               categoryId: _selectedCategory?.id,
+              excludeFromAnalytics: _excludeFromAnalytics,
             );
       } else {
         await ref.read(transactionsProvider.notifier).addTransaction(
@@ -198,6 +201,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
               date: finalDate,
               note: note,
               categoryId: _selectedCategory?.id,
+              excludeFromAnalytics: _excludeFromAnalytics,
             );
       }
       if (mounted) Navigator.of(context).pop(true);
@@ -425,6 +429,34 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                             time: _selectedTime,
                             onTap: _pickTime,
                             onClear: () => setState(() => _selectedTime = null),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+
+                          // ── Exclude from analytics toggle ────────────────────
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainerLow,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                            ),
+                            child: SwitchListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.md, vertical: 2),
+                              title: Text(
+                                'Exclude from analytics',
+                                style: AppTypography.bodyMedium
+                                    .copyWith(color: AppColors.onSurface),
+                              ),
+                              subtitle: Text(
+                                'This transaction won\'t count in charts or totals.',
+                                style: AppTypography.labelSmall
+                                    .copyWith(color: AppColors.onSurfaceVariant),
+                              ),
+                              value: _excludeFromAnalytics,
+                              activeThumbColor: accentColor,
+                              onChanged: (v) =>
+                                  setState(() => _excludeFromAnalytics = v),
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.lg),
 

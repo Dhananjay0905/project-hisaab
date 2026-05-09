@@ -53,6 +53,7 @@ class TransactionRemoteDataSource {
     required DateTime date,
     String? note,
     String? categoryId,
+    bool excludeFromAnalytics = false,
   }) async {
     final response = await _client.post<Map<String, dynamic>>(
       ApiEndpoints.transactions,
@@ -63,6 +64,7 @@ class TransactionRemoteDataSource {
         'date': date.toIso8601String(),
         if (note != null && note.isNotEmpty) 'note': note,
         if (categoryId != null) 'categoryId': categoryId,
+        'excludeFromAnalytics': excludeFromAnalytics,
       },
     );
     final data = response.data!['data'] as Map<String, dynamic>;
@@ -77,6 +79,7 @@ class TransactionRemoteDataSource {
     DateTime? date,
     String? note,
     String? categoryId,
+    bool? excludeFromAnalytics,
   }) async {
     final response = await _client.put<Map<String, dynamic>>(
       ApiEndpoints.transactionById(id),
@@ -87,6 +90,7 @@ class TransactionRemoteDataSource {
         if (date != null) 'date': date.toIso8601String(),
         if (note != null) 'note': note,
         if (categoryId != null) 'categoryId': categoryId,
+        if (excludeFromAnalytics != null) 'excludeFromAnalytics': excludeFromAnalytics,
       },
     );
     final data = response.data!['data'] as Map<String, dynamic>;

@@ -128,6 +128,7 @@ class TransactionsNotifier extends AsyncNotifier<TransactionPage> {
     required DateTime date,
     String? note,
     String? categoryId,
+    bool excludeFromAnalytics = false,
   }) async {
     final repo = ref.read(transactionRepositoryProvider);
     final tx = await repo.createTransaction(
@@ -137,6 +138,7 @@ class TransactionsNotifier extends AsyncNotifier<TransactionPage> {
       date: date,
       note: note,
       categoryId: categoryId,
+      excludeFromAnalytics: excludeFromAnalytics,
     );
     // Refresh list and summary
     await refresh();
@@ -152,6 +154,7 @@ class TransactionsNotifier extends AsyncNotifier<TransactionPage> {
     required DateTime date,
     String? note,
     String? categoryId,
+    bool? excludeFromAnalytics,
   }) async {
     final repo = ref.read(transactionRepositoryProvider);
     final tx = await repo.updateTransaction(
@@ -162,6 +165,7 @@ class TransactionsNotifier extends AsyncNotifier<TransactionPage> {
       date: date,
       note: note,
       categoryId: categoryId,
+      excludeFromAnalytics: excludeFromAnalytics,
     );
     // Update in-place so the list reflects changes instantly
     state = state.whenData((page) => TransactionPage(

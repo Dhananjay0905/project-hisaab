@@ -10,12 +10,14 @@ class TransactionCategory {
     required this.name,
     required this.emoji,
     required this.type,
+    this.excludeFromAnalytics = false,
   });
 
   final String id;
   final String name;
   final String emoji;
   final String type;
+  final bool excludeFromAnalytics;
 
   bool get isIncome => type == 'INCOME';
 }
@@ -29,6 +31,7 @@ class Transaction {
     required this.date,
     required this.createdAt,
     required this.updatedAt,
+    this.excludeFromAnalytics = false,
     this.note,
     this.categoryId,
     this.category,
@@ -41,6 +44,9 @@ class Transaction {
   /// 'INCOME' or 'EXPENSE'
   final String type;
 
+  /// True when this specific transaction is excluded from analytics.
+  final bool excludeFromAnalytics;
+
   final String? note;
   final String? categoryId;
   final TransactionCategory? category;
@@ -50,6 +56,10 @@ class Transaction {
 
   bool get isIncome => type == 'INCOME';
   bool get isExpense => type == 'EXPENSE';
+
+  /// Excluded if either this transaction or its category is marked excluded.
+  bool get isExcludedFromAnalytics =>
+      excludeFromAnalytics || (category?.excludeFromAnalytics ?? false);
 
   @override
   String toString() => 'Transaction($title [$type] ₹$amount)';

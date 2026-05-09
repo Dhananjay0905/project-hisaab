@@ -36,12 +36,14 @@ const {
 const prisma = new PrismaClient();
 
 // ─── Default categories seeded for every new user ─────────────────────────────
+// isDefault: true  → protected from deletion (cannot be removed by the user)
+// isDefault: false → seeded for convenience but fully deletable like custom cats
 const DEFAULT_CATEGORIES = [
-  { name: 'Food', emoji: '🍔', type: 'EXPENSE' },
-  { name: 'Entertainment', emoji: '🎬', type: 'EXPENSE' },
-  { name: 'Other Expenses', emoji: '💸', type: 'EXPENSE' },
-  { name: 'Salary', emoji: '💼', type: 'INCOME' },
-  { name: 'Other Income', emoji: '💰', type: 'INCOME' },
+  { name: 'Food',           emoji: '🍔', type: 'EXPENSE', isDefault: false },
+  { name: 'Entertainment',  emoji: '🎬', type: 'EXPENSE', isDefault: false },
+  { name: 'Other Expenses', emoji: '💸', type: 'EXPENSE', isDefault: true  },
+  { name: 'Salary',         emoji: '💼', type: 'INCOME',  isDefault: false },
+  { name: 'Other Income',   emoji: '💰', type: 'INCOME',  isDefault: true  },
 ];
 
 const BCRYPT_ROUNDS = 12;
@@ -88,7 +90,7 @@ async function register({ name, email, password, currency, currencySymbol, openi
         name: c.name,
         emoji: c.emoji,
         type: c.type,
-        isDefault: true,
+        isDefault: c.isDefault,
       })),
     });
 

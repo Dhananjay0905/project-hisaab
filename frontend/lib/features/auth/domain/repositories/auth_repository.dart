@@ -56,6 +56,9 @@ abstract interface class AuthRepository {
     required String newPassword,
   });
 
-  /// Returns true if an access token exists in local storage.
+  /// Returns true if a refresh token exists in local storage.
   Future<bool> hasValidSession();
+
+  /// Restore user from locally cached session data (no network call).
+  Future<User?> getCachedUser();
 }

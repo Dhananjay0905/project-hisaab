@@ -22,7 +22,9 @@ class DueModel extends Due {
       id: json['id'] as String,
       title: json['title'] as String,
       personName: json['personName'] as String,
-      amount: (json['amount'] as num).toDouble(),
+      amount: json['amount'] is String
+          ? double.parse(json['amount'] as String)
+          : (json['amount'] as num).toDouble(),
       type: json['type'] as String,
       note: json['note'] as String?,
       dueDate: json['dueDate'] != null

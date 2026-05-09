@@ -164,7 +164,12 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
 
                 // Back to login
                 TextButton(
-                  onPressed: () => context.go('/login'),
+                  onPressed: () {
+                    // Reset the auth state to Unauthenticated so the router
+                    // stops redirecting back to this page.
+                    ref.read(authNotifierProvider.notifier).goToLogin();
+                    context.go('/login');
+                  },
                   child: Text(
                     '← Back to sign in',
                     style: AppTypography.labelMedium.copyWith(

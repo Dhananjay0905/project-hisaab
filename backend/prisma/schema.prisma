@@ -85,14 +85,15 @@ model RefreshToken {
 }
 
 model Category {
-  id           String          @id @default(cuid())
-  userId       String
-  name         String
-  emoji        String
-  type         TransactionType
-  isDefault    Boolean         @default(false)
-  monthlyLimit Decimal?        @db.Decimal(15, 2)  // Optional monthly spend cap (EXPENSE only)
-  createdAt    DateTime        @default(now())
+  id                   String          @id @default(cuid())
+  userId               String
+  name                 String
+  emoji                String
+  type                 TransactionType
+  isDefault            Boolean         @default(false)
+  excludeFromAnalytics Boolean         @default(false) // Exclude all txns in this category from analytics
+  monthlyLimit         Decimal?        @db.Decimal(15, 2)  // Optional monthly spend cap (EXPENSE only)
+  createdAt            DateTime        @default(now())
 
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
@@ -102,19 +103,20 @@ model Category {
 }
 
 model Transaction {
-  id          String          @id @default(cuid())
-  userId      String
-  categoryId  String?
+  id                   String          @id @default(cuid())
+  userId               String
+  categoryId           String?
   // AES-256-GCM encrypted (stored as "iv:tag:ciphertext") — personal identifiers only
-  title       String
-  note        String?
+  title                String
+  note                 String?
   // Plain numeric — safe to query/aggregate
-  amount      Decimal         @db.Decimal(15, 2)
-  type        TransactionType
-  date        DateTime
-  deletedAt   DateTime?       // Soft delete
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  amount               Decimal         @db.Decimal(15, 2)
+  type                 TransactionType
+  date                 DateTime
+  excludeFromAnalytics Boolean         @default(false) // Override: exclude this specific txn from analytics
+  deletedAt            DateTime?       // Soft delete
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   category    Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)

@@ -20,7 +20,9 @@ class SplitParticipantModel extends SplitParticipant {
       id: json['id'] as String,
       splitId: splitId,
       name: json['name'] as String,
-      amount: (json['amount'] as num).toDouble(),
+      amount: json['amount'] is String
+          ? double.parse(json['amount'] as String)
+          : (json['amount'] as num).toDouble(),
       hasPaid: json['hasPaid'] as bool,
       paidAt: json['paidAt'] != null ? DateTime.parse(json['paidAt'] as String) : null,
       transactionId: json['transactionId'] as String?,

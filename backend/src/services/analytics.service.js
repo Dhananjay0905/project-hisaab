@@ -5,11 +5,26 @@
  *  1. Monthly trend  — last 6 calendar months of income vs expense totals.
  *  2. Category spend — current month's spending per EXPENSE category
  *     including the category's optional monthly limit.
+ *
+ * Exclusion rule:
+ *  A transaction is excluded from analytics if:
+ *   - The transaction itself has excludeFromAnalytics = true, OR
+ *   - The transaction's category has excludeFromAnalytics = true
  */
 
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
+
+// ─── Helper: get excluded category IDs for a user ─────────────────────────────
+
+async function _getExcludedCategoryIds(userId) {
+  const excluded = await prisma.category.findMany({
+    where: { userId, excludeFromAnalytics: true },
+    select: { id: true },
+  });
+  return excluded.map((c) => c.id);
+}
 
 // ─── Monthly Trend (last 6 months) ────────────────────────────────────────────
 
@@ -21,6 +36,17 @@ async function getMonthlyTrend(userId) {
   const now = new Date();
   const months = [];
 
+  // Get excluded category IDs once for all months
+  const excludedCatIds = await _getExcludedCategoryIds(userId);
+
+  // Base filter that excludes both transaction-level and category-level exclusions
+  const exclusionFilter = {
+    excludeFromAnalytics: false,
+    ...(excludedCatIds.length > 0
+      ? { categoryId: { notIn: excludedCatIds } }
+      : {}),
+  };
+
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const start = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -28,11 +54,19 @@ async function getMonthlyTrend(userId) {
 
     const [incomeAgg, expenseAgg] = await Promise.all([
       prisma.transaction.aggregate({
-        where: { userId, type: 'INCOME', deletedAt: null, date: { gte: start, lte: end } },
+        where: {
+          userId, type: 'INCOME', deletedAt: null,
+          date: { gte: start, lte: end },
+          ...exclusionFilter,
+        },
         _sum: { amount: true },
       }),
       prisma.transaction.aggregate({
-        where: { userId, type: 'EXPENSE', deletedAt: null, date: { gte: start, lte: end } },
+        where: {
+          userId, type: 'EXPENSE', deletedAt: null,
+          date: { gte: start, lte: end },
+          ...exclusionFilter,
+        },
         _sum: { amount: true },
       }),
     ]);
@@ -57,7 +91,9 @@ async function getMonthlyTrend(userId) {
  * @param {number} [month] - 1-based (Jan=1), defaults to current month
  *
  * Includes categories with zero spending IF they have a limit set.
- *   { categoryId, name, emoji, spent, limit }
+ *   { categoryId, name, emoji, spent, limit, excludeFromAnalytics }
+ *
+ * Categories marked excludeFromAnalytics are omitted from the result.
  */
 async function getCategorySpend(userId, year, month) {
   const now = new Date();
@@ -66,21 +102,25 @@ async function getCategorySpend(userId, year, month) {
   const start = new Date(y, m - 1, 1);
   const end   = new Date(y, m, 0, 23, 59, 59, 999);
 
-  // All expense categories for this user
+  // All expense categories for this user that are NOT excluded
   const categories = await prisma.category.findMany({
-    where: { userId, type: 'EXPENSE' },
+    where: { userId, type: 'EXPENSE', excludeFromAnalytics: false },
     orderBy: { name: 'asc' },
   });
 
-  // Aggregate spend per category for the selected month in one query
+  const categoryIds = categories.map((c) => c.id);
+
+  // Aggregate spend per category for the selected month
+  // Only count transactions not individually excluded
   const spendRows = await prisma.transaction.groupBy({
     by: ['categoryId'],
     where: {
       userId,
       type: 'EXPENSE',
       deletedAt: null,
+      excludeFromAnalytics: false,
       date: { gte: start, lte: end },
-      categoryId: { in: categories.map(c => c.id) },
+      categoryId: { in: categoryIds },
     },
     _sum: { amount: true },
   });
@@ -90,9 +130,14 @@ async function getCategorySpend(userId, year, month) {
     if (row.categoryId) spendMap[row.categoryId] = Number(row._sum.amount ?? 0);
   }
 
-  // Also include uncategorised total (categoryId === null)
+  // Also include uncategorised total (categoryId === null), if not excluded at txn level
   const uncatRow = await prisma.transaction.aggregate({
-    where: { userId, type: 'EXPENSE', deletedAt: null, date: { gte: start, lte: end }, categoryId: null },
+    where: {
+      userId, type: 'EXPENSE', deletedAt: null,
+      excludeFromAnalytics: false,
+      date: { gte: start, lte: end },
+      categoryId: null,
+    },
     _sum: { amount: true },
   });
   const uncatSpent = Number(uncatRow._sum.amount ?? 0);

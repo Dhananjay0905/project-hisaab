@@ -37,6 +37,7 @@ function _formatTransaction(tx) {
     amount: parseFloat(tx.amount),
     type: tx.type,
     date: tx.date,
+    excludeFromAnalytics: tx.excludeFromAnalytics ?? false,
     createdAt: tx.createdAt,
     updatedAt: tx.updatedAt,
     category: tx.category
@@ -45,6 +46,7 @@ function _formatTransaction(tx) {
           name: tx.category.name,
           emoji: tx.category.emoji,
           type: tx.category.type,
+          excludeFromAnalytics: tx.category.excludeFromAnalytics ?? false,
         }
       : null,
     categoryId: tx.categoryId ?? null,
@@ -53,7 +55,7 @@ function _formatTransaction(tx) {
 
 const CATEGORY_INCLUDE = {
   category: {
-    select: { id: true, name: true, emoji: true, type: true },
+    select: { id: true, name: true, emoji: true, type: true, excludeFromAnalytics: true },
   },
 };
 
@@ -138,7 +140,7 @@ async function getTransaction(userId, id) {
 // ─── Create ───────────────────────────────────────────────────────────────────
 
 async function createTransaction(userId, data) {
-  const { title, note, amount, type, categoryId, date } = data;
+  const { title, note, amount, type, categoryId, date, excludeFromAnalytics } = data;
 
   // Validate category ownership if provided
   if (categoryId) {
@@ -175,6 +177,7 @@ async function createTransaction(userId, data) {
       type,
       categoryId: finalCategoryId,
       date: date ? new Date(date) : new Date(),
+      excludeFromAnalytics: excludeFromAnalytics === true,
     },
     include: CATEGORY_INCLUDE,
   });
@@ -190,7 +193,7 @@ async function updateTransaction(userId, id, data) {
   });
   if (!existing) throw createError('Transaction not found.', 404, 'NOT_FOUND');
 
-  const { title, note, amount, type, categoryId, date } = data;
+  const { title, note, amount, type, categoryId, date, excludeFromAnalytics } = data;
   const newType = type || existing.type;
 
   // Validate category if changing
@@ -231,6 +234,7 @@ async function updateTransaction(userId, id, data) {
       ...(type ? { type } : {}),
       categoryId: finalCategoryId,
       ...(date ? { date: new Date(date) } : {}),
+      ...(excludeFromAnalytics !== undefined ? { excludeFromAnalytics: Boolean(excludeFromAnalytics) } : {}),
     },
     include: CATEGORY_INCLUDE,
   });

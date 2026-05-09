@@ -29,6 +29,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     required String emoji,
     required String type,
     double? monthlyLimit,
+    bool excludeFromAnalytics = false,
   }) async {
     try {
       return await _remote.createCategory(
@@ -36,6 +37,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
         emoji: emoji,
         type: type,
         monthlyLimit: monthlyLimit,
+        excludeFromAnalytics: excludeFromAnalytics,
       );
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message, fieldErrors: e.fieldErrors);
@@ -52,6 +54,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     String? name,
     String? emoji,
     Object? monthlyLimit,
+    bool? excludeFromAnalytics,
   }) async {
     try {
       return await _remote.updateCategory(
@@ -59,6 +62,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
         name: name,
         emoji: emoji,
         monthlyLimit: monthlyLimit,
+        excludeFromAnalytics: excludeFromAnalytics,
       );
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message, fieldErrors: e.fieldErrors);

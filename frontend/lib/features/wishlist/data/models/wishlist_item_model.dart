@@ -23,9 +23,13 @@ class WishlistItemModel extends WishlistItem {
       title: json['title'] as String,
       emoji: json['emoji'] as String? ?? '🛍️',
       targetPrice: json['targetPrice'] != null
-          ? (json['targetPrice'] as num).toDouble()
+          ? (json['targetPrice'] is String
+              ? double.parse(json['targetPrice'] as String)
+              : (json['targetPrice'] as num).toDouble())
           : null,
-      amountSaved: (json['amountSaved'] as num).toDouble(),
+      amountSaved: json['amountSaved'] is String
+          ? double.parse(json['amountSaved'] as String)
+          : (json['amountSaved'] as num).toDouble(),
       deductFromSavings: json['deductFromSavings'] as bool? ?? true,
       link: json['link'] as String?,
       isPurchased: json['isPurchased'] as bool? ?? false,

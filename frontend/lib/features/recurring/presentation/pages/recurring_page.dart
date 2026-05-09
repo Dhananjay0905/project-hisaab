@@ -660,33 +660,51 @@ class _RecurringFormSheetState
               ),
               const SizedBox(height: AppSpacing.xl),
 
-              // Submit
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _saving ? null : _submit,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.tertiary,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: AppSpacing.md),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: _saving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(
-                          _isEditing
-                              ? 'Save Changes'
-                              : 'Create Recurring',
-                          style: AppTypography.labelLarge
-                              .copyWith(color: AppColors.onTertiary),
+              // Submit and Delete
+              Row(
+                children: [
+                  if (_isEditing) ...[
+                    IconButton(
+                      onPressed: _saving ? null : _delete,
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.error.withValues(alpha: 0.1),
+                        foregroundColor: AppColors.error,
+                        padding: const EdgeInsets.all(14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                ),
+                      ),
+                      icon: const Icon(Icons.delete_outline_rounded),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: _saving ? null : _submit,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.tertiary,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.md),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _saving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(
+                              _isEditing
+                                  ? 'Save Changes'
+                                  : 'Create Recurring',
+                              style: AppTypography.labelLarge
+                                  .copyWith(color: AppColors.onTertiary),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -776,6 +794,57 @@ class _RecurringFormSheetState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _delete() async {
+    final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.surfaceContainerLowest,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text('Delete "${widget.existing!.title}"?',
+                style: AppTypography.titleMedium),
+            content: Text(
+              'This recurring transaction will be permanently removed.',
+              style: AppTypography.bodySmall
+                  .copyWith(color: AppColors.onSurfaceVariant),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text('Keep',
+                    style: AppTypography.labelLarge
+                        .copyWith(color: AppColors.onSurfaceVariant)),
+              ),
+              FilledButton(
+                style:
+                    FilledButton.styleFrom(backgroundColor: AppColors.error),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text('Delete',
+                    style: AppTypography.labelLarge
+                        .copyWith(color: AppColors.onError)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirm) return;
+
+    setState(() => _saving = true);
+    try {
+      await widget.ref.read(recurringProvider.notifier).remove(widget.existing!.id);
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Failed to delete.'),
+            backgroundColor: AppColors.error));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
