@@ -110,11 +110,22 @@ async function register(req, res, next) {
 async function verifyEmail(req, res, next) {
   try {
     const { token } = req.query;
-    if (!token) return sendError(res, 'Verification token is missing.', 400, 'MISSING_TOKEN');
-    const result = await authService.verifyEmail(token);
-    return sendSuccess(res, result);
+    if (!token) {
+      return res.status(400).send(
+        '<html><body style="font-family:sans-serif;text-align:center;padding:60px;color:#d9534f;"><h2>❌ Verification Failed</h2><p>Verification token is missing.</p></body></html>'
+      );
+    }
+    
+    await authService.verifyEmail(token);
+    
+    return res.send(
+      '<html><body style="font-family:sans-serif;text-align:center;padding:60px;color:#28a745;"><h2>✅ Email Verified!</h2><p>Your email address has been successfully verified. You can now close this window and return to the Expensio app.</p></body></html>'
+    );
   } catch (err) {
-    return next(err);
+    const message = err.message || 'An error occurred during verification. The token might be invalid or expired.';
+    return res.status(400).send(
+      `<html><body style="font-family:sans-serif;text-align:center;padding:60px;color:#d9534f;"><h2>❌ Verification Failed</h2><p>${message}</p></body></html>`
+    );
   }
 }
 
