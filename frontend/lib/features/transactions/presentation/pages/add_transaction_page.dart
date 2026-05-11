@@ -433,31 +433,53 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                           const SizedBox(height: AppSpacing.lg),
 
                           // ── Exclude from analytics toggle ────────────────────
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceContainerLow,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
-                            ),
-                            child: SwitchListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.md, vertical: 2),
-                              title: Text(
-                                'Exclude from analytics',
-                                style: AppTypography.bodyMedium
-                                    .copyWith(color: AppColors.onSurface),
+                          Builder(builder: (context) {
+                            final catExcluded =
+                                _selectedCategory?.excludeFromAnalytics ?? false;
+                            // If the category is already excluded, lock the
+                            // toggle ON — the category-level flag covers it.
+                            final effectiveValue =
+                                catExcluded || _excludeFromAnalytics;
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: catExcluded
+                                    ? AppColors.surfaceContainerLow
+                                        .withValues(alpha: 0.5)
+                                    : AppColors.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                    color: AppColors.outlineVariant
+                                        .withValues(alpha: 0.5)),
                               ),
-                              subtitle: Text(
-                                'This transaction won\'t count in charts or totals.',
-                                style: AppTypography.labelSmall
-                                    .copyWith(color: AppColors.onSurfaceVariant),
+                              child: SwitchListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.md, vertical: 2),
+                                title: Text(
+                                  'Exclude from analytics',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: catExcluded
+                                        ? AppColors.onSurfaceVariant
+                                        : AppColors.onSurface,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  catExcluded
+                                      ? 'Controlled by the "${_selectedCategory!.name}" category setting.'
+                                      : 'This transaction won\'t count in charts or totals.',
+                                  style: AppTypography.labelSmall.copyWith(
+                                      color: AppColors.onSurfaceVariant),
+                                ),
+                                value: effectiveValue,
+                                activeThumbColor:
+                                    catExcluded ? AppColors.outlineVariant : accentColor,
+                                // null disables the switch widget
+                                onChanged: catExcluded
+                                    ? null
+                                    : (v) => setState(
+                                        () => _excludeFromAnalytics = v),
                               ),
-                              value: _excludeFromAnalytics,
-                              activeThumbColor: accentColor,
-                              onChanged: (v) =>
-                                  setState(() => _excludeFromAnalytics = v),
-                            ),
-                          ),
+                            );
+                          }),
                           const SizedBox(height: AppSpacing.lg),
 
                           // Error message
@@ -744,7 +766,6 @@ class _AmountField extends StatelessWidget {
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
                   ),
-                  autofocus: true,
                 ),
               ),
             ],

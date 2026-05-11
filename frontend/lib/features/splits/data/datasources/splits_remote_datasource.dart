@@ -24,6 +24,7 @@ class SplitsRemoteDataSource {
     required List<String> participantNames,
     String? note,
     DateTime? date,
+    String? categoryId,
   }) async {
     final response = await _client.post<Map<String, dynamic>>(
       ApiEndpoints.splits,
@@ -33,18 +34,20 @@ class SplitsRemoteDataSource {
         'participantNames': participantNames,
         if (note != null && note.isNotEmpty) 'note': note,
         if (date != null) 'date': date.toIso8601String(),
+        if (categoryId != null) 'categoryId': categoryId,
       },
     );
     final data = response.data!['data'] as Map<String, dynamic>;
     return SplitGroupModel.fromJson(data);
   }
 
-  Future<SplitGroupModel> updateSplit(String id, {String? title, String? note}) async {
+  Future<SplitGroupModel> updateSplit(String id, {String? title, String? note, String? categoryId}) async {
     final response = await _client.put<Map<String, dynamic>>(
       ApiEndpoints.splitById(id),
       data: {
         if (title != null) 'title': title,
         if (note != null) 'note': note,
+        'categoryId': categoryId, // always send (null = remove)
       },
     );
     final data = response.data!['data'] as Map<String, dynamic>;

@@ -42,6 +42,7 @@ class DuesNotifier extends AsyncNotifier<List<Due>> {
     required String type,
     String? note,
     DateTime? dueDate,
+    String? categoryId,
   }) async {
     final ds = ref.read(_duesRemoteDataSourceProvider);
     final due = await ds.createDue(
@@ -51,6 +52,7 @@ class DuesNotifier extends AsyncNotifier<List<Due>> {
       type: type,
       note: note,
       dueDate: dueDate,
+      categoryId: categoryId,
     );
     // Prepend to list
     state = AsyncData([due, ...state.valueOrNull ?? []]);
@@ -78,6 +80,7 @@ class DuesNotifier extends AsyncNotifier<List<Due>> {
     String? type,
     String? note,
     DateTime? dueDate,
+    String? categoryId,
   }) async {
     final ds = ref.read(_duesRemoteDataSourceProvider);
     final updated = await ds.updateDue(
@@ -88,6 +91,7 @@ class DuesNotifier extends AsyncNotifier<List<Due>> {
       type: type,
       note: note,
       dueDate: dueDate,
+      categoryId: categoryId,
     );
     state = AsyncData(
       (state.valueOrNull ?? []).map((d) => d.id == id ? updated : d).toList(),

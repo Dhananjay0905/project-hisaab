@@ -38,6 +38,7 @@ class SplitsNotifier extends AsyncNotifier<List<SplitGroup>> {
     required List<String> participantNames,
     String? note,
     DateTime? date,
+    String? categoryId,
   }) async {
     final ds = ref.read(_splitsRemoteDataSourceProvider);
     final split = await ds.createSplit(
@@ -46,14 +47,15 @@ class SplitsNotifier extends AsyncNotifier<List<SplitGroup>> {
       participantNames: participantNames,
       note: note,
       date: date,
+      categoryId: categoryId,
     );
     state = AsyncData([split, ...state.valueOrNull ?? []]);
     return split;
   }
 
-  Future<SplitGroup> updateSplit(String id, {String? title, String? note}) async {
+  Future<SplitGroup> updateSplit(String id, {String? title, String? note, String? categoryId}) async {
     final ds = ref.read(_splitsRemoteDataSourceProvider);
-    final updated = await ds.updateSplit(id, title: title, note: note);
+    final updated = await ds.updateSplit(id, title: title, note: note, categoryId: categoryId);
     state = AsyncData(
       (state.valueOrNull ?? []).map((s) => s.id == id ? updated : s).toList(),
     );

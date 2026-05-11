@@ -34,6 +34,9 @@ class SplitGroup {
     this.note,
     required this.date,
     required this.createdAt,
+    this.categoryId,
+    this.categoryName,
+    this.categoryEmoji,
   });
 
   final String id;
@@ -44,6 +47,9 @@ class SplitGroup {
   final String? note;
   final DateTime date;
   final DateTime createdAt;
+  final String? categoryId;
+  final String? categoryName;
+  final String? categoryEmoji;
 
   /// Number of participants who have paid.
   int get paidCount => participants.where((p) => p.hasPaid).length;

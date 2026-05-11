@@ -79,8 +79,11 @@ class TokenInterceptor extends Interceptor {
         ),
       );
 
-      final newAccessToken = refreshResponse.data['accessToken'] as String;
-      final newRefreshToken = refreshResponse.data['refreshToken'] as String?;
+      // Backend envelope: { success: true, data: { accessToken, refreshToken } }
+      final body = refreshResponse.data as Map<String, dynamic>;
+      final data = body['data'] as Map<String, dynamic>;
+      final newAccessToken = data['accessToken'] as String;
+      final newRefreshToken = data['refreshToken'] as String?;
       await _storage.saveAccessToken(newAccessToken);
       // CRITICAL: save the rotated refresh token — the old one is now revoked on the server.
       if (newRefreshToken != null && newRefreshToken.isNotEmpty) {

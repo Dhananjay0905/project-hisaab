@@ -52,6 +52,9 @@ class SplitGroupModel extends SplitGroup {
     super.note,
     required super.date,
     required super.createdAt,
+    super.categoryId,
+    super.categoryName,
+    super.categoryEmoji,
   });
 
   factory SplitGroupModel.fromJson(Map<String, dynamic> json) {
@@ -60,6 +63,7 @@ class SplitGroupModel extends SplitGroup {
     final participants = rawParticipants
         .map((p) => SplitParticipantModel.fromJson(p as Map<String, dynamic>, id))
         .toList();
+    final cat = json['category'] as Map<String, dynamic>?;
 
     return SplitGroupModel(
       id: id,
@@ -70,6 +74,9 @@ class SplitGroupModel extends SplitGroup {
       note: json['note'] as String?,
       date: DateTime.parse(json['date'] as String),
       createdAt: DateTime.parse(json['createdAt'] as String),
+      categoryId: json['categoryId'] as String?,
+      categoryName: cat?['name'] as String?,
+      categoryEmoji: cat?['emoji'] as String?,
     );
   }
 
@@ -87,6 +94,9 @@ class SplitGroupModel extends SplitGroup {
       note: note,
       date: date,
       createdAt: createdAt,
+      categoryId: categoryId,
+      categoryName: categoryName,
+      categoryEmoji: categoryEmoji,
     );
   }
 }

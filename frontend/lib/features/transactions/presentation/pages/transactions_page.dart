@@ -5,10 +5,13 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
 
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../categories/domain/entities/category.dart';
+import '../../../categories/presentation/providers/categories_provider.dart';
 import '../../domain/entities/transaction.dart';
 import '../providers/transactions_provider.dart';
 import 'add_transaction_page.dart';
@@ -28,6 +31,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   String? _selectedType; // null = All, 'INCOME', 'EXPENSE'
+  Set<String> _selectedCategoryIds = {};
   _ViewMode _viewMode = _ViewMode.list;
 
   // Calendar state
@@ -73,6 +77,33 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       type: type,
       clearType: type == null,
     ));
+  }
+
+  void _applyCategoryFilter(Set<String> ids) {
+    setState(() => _selectedCategoryIds = ids);
+    final notifier = ref.read(transactionsProvider.notifier);
+    notifier.applyFilters(notifier.filters.copyWith(
+      categoryIds: ids.toList(),
+      clearCategoryIds: ids.isEmpty,
+    ));
+  }
+
+  void _showCategoryFilterSheet() {
+    final allCategories =
+        ref.read(categoriesProvider).valueOrNull ?? <Category>[];
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CategoryFilterSheet(
+        allCategories: allCategories,
+        selectedIds: Set.from(_selectedCategoryIds),
+        onApply: (ids) {
+          Navigator.pop(context);
+          _applyCategoryFilter(ids);
+        },
+      ),
+    );
   }
 
   // ── Calendar helpers ──────────────────────────────────────────────────────
@@ -301,32 +332,49 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                     onChanged: (val) => setState(() {}),
                   ),
                 if (_viewMode == _ViewMode.list) const SizedBox(height: 16),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  clipBehavior: Clip.none,
-                  child: Row(
-                    children: [
-                      _FilterChip(
-                        label: 'All',
-                        isSelected: _selectedType == null,
-                        onSelected: () => _applyTypeFilter(null),
+                Row(
+                  children: [
+                    // Scrollable type chips
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        clipBehavior: Clip.none,
+                        child: Row(
+                          children: [
+                            _FilterChip(
+                              label: 'All',
+                              isSelected: _selectedType == null,
+                              onSelected: () => _applyTypeFilter(null),
+                            ),
+                            const SizedBox(width: 8),
+                            _FilterChip(
+                              label: 'Cash In',
+                              isSelected: _selectedType == 'INCOME',
+                              onSelected: () => _applyTypeFilter('INCOME'),
+                              selectedColor: SemanticColors.of(context).cashIn,
+                            ),
+                            const SizedBox(width: 8),
+                            _FilterChip(
+                              label: 'Cash Out',
+                              isSelected: _selectedType == 'EXPENSE',
+                              onSelected: () => _applyTypeFilter('EXPENSE'),
+                              selectedColor: SemanticColors.of(context).cashOut,
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      _FilterChip(
-                        label: 'Cash In',
-                        isSelected: _selectedType == 'INCOME',
-                        onSelected: () => _applyTypeFilter('INCOME'),
-                        selectedColor: SemanticColors.of(context).cashIn,
-                      ),
-                      const SizedBox(width: 8),
-                      _FilterChip(
-                        label: 'Cash Out',
-                        isSelected: _selectedType == 'EXPENSE',
-                        onSelected: () => _applyTypeFilter('EXPENSE'),
-                        selectedColor: SemanticColors.of(context).cashOut,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Category filter icon button (pinned right)
+                    _FilterIconButton(
+                      isActive: _selectedCategoryIds.isNotEmpty,
+                      selectedCount: _selectedCategoryIds.length,
+                      onTap: _showCategoryFilterSheet,
+                      onClear: _selectedCategoryIds.isNotEmpty
+                          ? () => _applyCategoryFilter({})
+                          : null,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
               ],
@@ -382,8 +430,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
           child: ListView.builder(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8)
-                .copyWith(bottom: 120),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8)
+                .copyWith(bottom: MediaQuery.of(context).padding.bottom + AppSpacing.lg),
             itemCount: page.items.length + (page.hasNext ? 1 : 0),
             itemBuilder: (context, index) {
               if (index == page.items.length) {
@@ -402,15 +450,14 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (showHeader)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16, bottom: 8),
-                      child: Text(
-                        _formatHeaderDate(tx.date),
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                      ),
+                    _DateGroupHeader(
+                      label: _formatHeaderDate(tx.date),
+                      transactions: page.items
+                          .where((t) =>
+                              _formatHeaderDate(t.date) ==
+                              _formatHeaderDate(tx.date))
+                          .toList(),
+                      currencySymbol: currencySymbol,
                     ),
                   Dismissible(
                     key: ValueKey(tx.id),
@@ -676,8 +723,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20)
-                              .copyWith(bottom: 120),
+                          padding: EdgeInsets.symmetric(horizontal: 20).copyWith(
+                              bottom: MediaQuery.of(context).padding.bottom + AppSpacing.lg),
                           itemCount: selectedDayTxns.length + 1,
                           itemBuilder: (context, index) {
                             if (index == 0) {
@@ -746,21 +793,92 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     final yesterday = today.subtract(const Duration(days: 1));
     final local = date.toLocal();
     final txDate = DateTime(local.year, local.month, local.day);
-    final shortDate = DateFormat('dd/MM/yy').format(local);
 
-    if (txDate == today) {
-      return 'Today ($shortDate)';
-    } else if (txDate == yesterday) {
-      return 'Yesterday ($shortDate)';
-    } else {
-      return '${DateFormat('MMM d, yyyy').format(local)} ($shortDate)';
+    if (txDate == today) return 'Today';
+    if (txDate == yesterday) return 'Yesterday';
+    // Same year → "Mon, 5 May"; different year → "Mon, 5 May 2023"
+    if (local.year == now.year) {
+      return DateFormat('EEE, d MMM').format(local);
     }
+    return DateFormat('EEE, d MMM yyyy').format(local);
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Private widgets
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── Date Group Header ────────────────────────────────────────────────────────
+
+class _DateGroupHeader extends StatelessWidget {
+  const _DateGroupHeader({
+    required this.label,
+    required this.transactions,
+    required this.currencySymbol,
+  });
+
+  final String label;
+  final List<Transaction> transactions;
+  final String currencySymbol;
+
+  @override
+  Widget build(BuildContext context) {
+    final income = transactions
+        .where((t) => t.isIncome)
+        .fold(0.0, (s, t) => s + t.amount);
+    final expense = transactions
+        .where((t) => !t.isIncome)
+        .fold(0.0, (s, t) => s + t.amount);
+
+    final sem = SemanticColors.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 6),
+      child: Row(
+        children: [
+          // Date label
+          Text(
+            label,
+            style: AppTypography.labelMedium.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurfaceVariant,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Hairline divider
+          Expanded(
+            child: Container(
+              height: 1,
+              color: AppColors.surfaceContainerHigh,
+            ),
+          ),
+          // Daily totals
+          if (income > 0) ...[
+            const SizedBox(width: 8),
+            Text(
+              '+$currencySymbol${income.toStringAsFixed(0)}',
+              style: AppTypography.labelSmall.copyWith(
+                color: sem.cashIn,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          if (expense > 0) ...[
+            const SizedBox(width: 6),
+            Text(
+              '-$currencySymbol${expense.toStringAsFixed(0)}',
+              style: AppTypography.labelSmall.copyWith(
+                color: sem.cashOut,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class _ModeToggleButton extends StatelessWidget {
   const _ModeToggleButton({
@@ -980,6 +1098,350 @@ class _ContextMenuItem extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Filter Icon Button (category filter, pinned right) ────────────────────
+
+class _FilterIconButton extends StatelessWidget {
+  const _FilterIconButton({
+    required this.isActive,
+    required this.selectedCount,
+    required this.onTap,
+    this.onClear,
+  });
+
+  final bool isActive;
+  final int selectedCount;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    final surface = Theme.of(context).colorScheme.surfaceContainerHighest;
+
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onClear,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: isActive ? color.withAlpha(20) : surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActive ? color : Theme.of(context).colorScheme.outlineVariant,
+            width: isActive ? 1.5 : 1,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Center(
+              child: Icon(
+                Icons.tune_rounded,
+                size: 20,
+                color: isActive ? color : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (isActive)
+              Positioned(
+                top: 7,
+                right: 7,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.surface,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Category Filter Bottom Sheet ───────────────────────────────────────────
+
+class _CategoryFilterSheet extends StatefulWidget {
+  const _CategoryFilterSheet({
+    required this.allCategories,
+    required this.selectedIds,
+    required this.onApply,
+  });
+
+  final List<Category> allCategories;
+  final Set<String> selectedIds;
+  final void Function(Set<String> ids) onApply;
+
+  @override
+  State<_CategoryFilterSheet> createState() => _CategoryFilterSheetState();
+}
+
+class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
+  late Set<String> _pendingIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _pendingIds = Set.from(widget.selectedIds);
+  }
+
+  void _toggle(String id) {
+    setState(() {
+      if (_pendingIds.contains(id)) {
+        _pendingIds.remove(id);
+      } else {
+        _pendingIds.add(id);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final incomeCategories =
+        widget.allCategories.where((c) => c.isIncome).toList();
+    final expenseCategories =
+        widget.allCategories.where((c) => c.isExpense).toList();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      builder: (_, scrollController) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          children: [
+            // ── Drag handle ───────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 4),
+              child: Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
+            // ── Header ────────────────────────────────────────────────────
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Row(
+                children: [
+                  Text('Filter by Category',
+                      style: AppTypography.titleMedium
+                          .copyWith(fontWeight: FontWeight.w700)),
+                  const Spacer(),
+                  if (_pendingIds.isNotEmpty)
+                    TextButton(
+                      onPressed: () => setState(() => _pendingIds = {}),
+                      child: Text(
+                        'Clear all',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // ── Scrollable category list ──────────────────────────────────
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                children: [
+                  if (incomeCategories.isNotEmpty) ...[
+                    _SectionLabel(
+                      icon: Icons.arrow_downward_rounded,
+                      label: 'Cash In',
+                      color: SemanticColors.of(context).cashIn,
+                    ),
+                    const SizedBox(height: 10),
+                    _CategoryChipGrid(
+                      categories: incomeCategories,
+                      selectedIds: _pendingIds,
+                      onToggle: _toggle,
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  if (expenseCategories.isNotEmpty) ...[
+                    _SectionLabel(
+                      icon: Icons.arrow_upward_rounded,
+                      label: 'Cash Out',
+                      color: SemanticColors.of(context).cashOut,
+                    ),
+                    const SizedBox(height: 10),
+                    _CategoryChipGrid(
+                      categories: expenseCategories,
+                      selectedIds: _pendingIds,
+                      onToggle: _toggle,
+                    ),
+                  ],
+                  if (widget.allCategories.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          'No categories yet',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // ── Apply button ──────────────────────────────────────────────
+            SafeArea(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () => widget.onApply(_pendingIds),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      _pendingIds.isEmpty
+                          ? 'Show All'
+                          : 'Apply (${_pendingIds.length})',
+                      style: AppTypography.labelLarge.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: AppTypography.labelMedium.copyWith(
+            color: color,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CategoryChipGrid extends StatelessWidget {
+  const _CategoryChipGrid({
+    required this.categories,
+    required this.selectedIds,
+    required this.onToggle,
+  });
+  final List<Category> categories;
+  final Set<String> selectedIds;
+  final void Function(String id) onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: categories.map((cat) {
+        final isSelected = selectedIds.contains(cat.id);
+        final color = cat.isIncome
+            ? SemanticColors.of(context).cashIn
+            : SemanticColors.of(context).cashOut;
+        return GestureDetector(
+          onTap: () => onToggle(cat.id),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? color.withAlpha(30)
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected
+                    ? color
+                    : Theme.of(context).colorScheme.outlineVariant,
+                width: isSelected ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(cat.emoji,
+                    style: const TextStyle(fontSize: 15)),
+                const SizedBox(width: 6),
+                Text(
+                  cat.name,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: isSelected
+                            ? color
+                            : Theme.of(context).colorScheme.onSurface,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.normal,
+                      ),
+                ),
+                if (isSelected) ...[
+                  const SizedBox(width: 4),
+                  Icon(Icons.check_rounded, size: 14, color: color),
+                ],
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

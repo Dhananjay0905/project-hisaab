@@ -8,6 +8,9 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../../analytics/presentation/providers/analytics_provider.dart';
+import '../../../dashboard/presentation/providers/summary_provider.dart';
+import '../../../transactions/presentation/providers/transactions_provider.dart';
 import '../../data/datasources/category_remote_datasource.dart';
 import '../../data/repositories/category_repository_impl.dart';
 import '../../domain/entities/category.dart';
@@ -40,6 +43,19 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
     await future;
   }
 
+  /// Invalidates all providers whose cached data embeds category info.
+  /// Called after every mutation so dependant pages refresh automatically.
+  void _invalidateDependents() {
+    // Transactions embed category name/emoji on every tile
+    ref.invalidate(transactionsProvider);
+    // Dashboard summary shows top spending categories
+    ref.invalidate(dashboardSummaryProvider);
+    // Analytics charts filter by excludeFromAnalytics
+    ref.invalidate(monthlyTrendProvider);
+    // categorySpendProvider is family-based — invalidate all cached params
+    ref.invalidate(categorySpendProvider);
+  }
+
   // ── Mutations ──────────────────────────────────────────────────────────────
 
   Future<Category> addCategory({
@@ -59,6 +75,7 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
     );
     // Optimistic: append to current list
     state = state.whenData((list) => [...list, newCategory]);
+    _invalidateDependents();
     return newCategory;
   }
 
@@ -80,6 +97,7 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
     state = state.whenData(
       (list) => list.map((c) => c.id == id ? updated : c).toList(),
     );
+    _invalidateDependents();
     return updated;
   }
 
@@ -87,6 +105,7 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
     final repo = ref.read(categoryRepositoryProvider);
     await repo.deleteCategory(id);
     state = state.whenData((list) => list.where((c) => c.id != id).toList());
+    _invalidateDependents();
   }
 }
 

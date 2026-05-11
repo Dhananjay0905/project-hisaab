@@ -13,6 +13,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
+import '../../../categories/domain/entities/category.dart';
+import '../../../categories/presentation/providers/categories_provider.dart';
 import '../providers/splits_provider.dart';
 
 class AddSplitPage extends ConsumerStatefulWidget {
@@ -29,6 +31,8 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
 
   int _participantCount = 2; // minimum 1 other person + you = 2 total
   late List<TextEditingController> _nameControllers;
+  DateTime _selectedDate = DateTime.now();
+  Category? _selectedCategory;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -92,6 +96,10 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
       setState(() => _errorMessage = 'Please enter a valid total amount.');
       return;
     }
+    if (_selectedCategory == null) {
+      setState(() => _errorMessage = 'Please select a category.');
+      return;
+    }
 
     final names = _nameControllers.map((c) => c.text.trim()).toList();
     if (names.any((n) => n.isEmpty)) {
@@ -107,6 +115,8 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
         totalAmount: total,
         participantNames: names,
         note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
+        date: _selectedDate,
+        categoryId: _selectedCategory?.id,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -194,6 +204,15 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
+                  // ── Category ──────────────────────────────────────────────
+                  _Label('Category'),
+                  const SizedBox(height: AppSpacing.sm),
+                  _SplitCategoryPicker(
+                    selected: _selectedCategory,
+                    onSelect: (cat) => setState(() => _selectedCategory = cat),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
                   // ── People counter ────────────────────────────────────────
                   _Label('Number of People (including you)'),
                   const SizedBox(height: AppSpacing.xs),
@@ -249,7 +268,49 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
                     icon: Icons.notes_rounded,
                     maxLines: 2,
                   ),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // ── Date ───────────────────────────────────────────────────
+                  _Label('Date'),
+                  const SizedBox(height: AppSpacing.xs),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) setState(() => _selectedDate = picked);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outlineVariant
+                              .withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today_rounded,
+                              size: 20,
+                              color: AppColors.primary),
+                          const SizedBox(width: 10),
+                          Text(
+                            DateFormat('MMM d, yyyy').format(_selectedDate),
+                            style: AppTypography.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // ── Error ─────────────────────────────────────────────────
                   if (_errorMessage != null) ...[
@@ -486,6 +547,100 @@ class _CounterButton extends StatelessWidget {
               ? AppColors.primary
               : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
         ),
+      ),
+    );
+  }
+}
+
+// ─── Split Category Picker ────────────────────────────────────────────────────
+
+class _SplitCategoryPicker extends ConsumerStatefulWidget {
+  const _SplitCategoryPicker({
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final Category? selected;
+  final ValueChanged<Category?> onSelect;
+
+  @override
+  ConsumerState<_SplitCategoryPicker> createState() => _SplitCategoryPickerState();
+}
+
+class _SplitCategoryPickerState extends ConsumerState<_SplitCategoryPicker> {
+  bool _defaultSet = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = ref.watch(expenseCategoriesProvider);
+
+    // Pre-select "Other Expenses" by default on first load
+    if (!_defaultSet && categories.isNotEmpty) {
+      _defaultSet = true;
+      if (widget.selected == null) {
+        final defaultCat = categories
+            .where((c) => c.name == 'Other Expenses')
+            .firstOrNull;
+        final toSelect = defaultCat ?? categories.first;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) widget.onSelect(toSelect);
+        });
+      }
+    }
+
+    if (categories.isEmpty) {
+      return const SizedBox(
+        height: 48,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final cat = categories[i];
+          final isSelected = widget.selected?.id == cat.id;
+          return GestureDetector(
+            onTap: () {
+              if (!isSelected) widget.onSelect(cat);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.cashOut
+                    : Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.cashOut
+                      : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(cat.emoji, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                  Text(
+                    cat.name,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: isSelected
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

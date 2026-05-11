@@ -15,9 +15,13 @@ class DueModel extends Due {
     super.note,
     super.dueDate,
     super.paidAt,
+    super.categoryId,
+    super.categoryName,
+    super.categoryEmoji,
   });
 
   factory DueModel.fromJson(Map<String, dynamic> json) {
+    final cat = json['category'] as Map<String, dynamic>?;
     return DueModel(
       id: json['id'] as String,
       title: json['title'] as String,
@@ -35,6 +39,9 @@ class DueModel extends Due {
           ? DateTime.parse(json['paidAt'] as String)
           : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      categoryId: json['categoryId'] as String?,
+      categoryName: cat?['name'] as String?,
+      categoryEmoji: cat?['emoji'] as String?,
     );
   }
 }

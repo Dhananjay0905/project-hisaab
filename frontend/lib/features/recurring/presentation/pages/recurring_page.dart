@@ -85,11 +85,11 @@ class _RecurringPageState extends ConsumerState<RecurringPage> {
                 }
 
                 return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
+                  padding: EdgeInsets.fromLTRB(
                     AppSpacing.md,
                     AppSpacing.sm,
                     AppSpacing.md,
-                    AppSpacing.xl4 * 2,
+                    MediaQuery.of(context).padding.bottom + AppSpacing.lg,
                   ),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([

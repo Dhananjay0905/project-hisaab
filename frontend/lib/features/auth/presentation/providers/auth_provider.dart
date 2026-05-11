@@ -149,7 +149,6 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
   // ── Logout ───────────────────────────────────────────────────────────────
 
   Future<void> logout() async {
-    state = const AsyncLoading();
     await _repo.logout();
     state = const AsyncData(AuthUnauthenticated());
   }

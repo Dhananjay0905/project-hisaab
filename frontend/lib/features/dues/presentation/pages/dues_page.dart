@@ -175,11 +175,11 @@ class _DuesPageState extends ConsumerState<DuesPage>
                       }
 
                       return SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(
+                        padding: EdgeInsets.fromLTRB(
                           AppSpacing.lg,
                           AppSpacing.md,
                           AppSpacing.lg,
-                          140,
+                          MediaQuery.of(context).padding.bottom + 80,
                         ),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
@@ -234,11 +234,11 @@ class _DuesPageState extends ConsumerState<DuesPage>
                         );
                       }
                       return SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(
+                        padding: EdgeInsets.fromLTRB(
                           AppSpacing.lg,
                           AppSpacing.md,
                           AppSpacing.lg,
-                          140,
+                          MediaQuery.of(context).padding.bottom + AppSpacing.lg,
                         ),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
@@ -261,7 +261,7 @@ class _DuesPageState extends ConsumerState<DuesPage>
           // ── FAB — context-aware ─────────────────────────────────────────────
           Positioned(
             right: 16,
-            bottom: AppSpacing.bottomNavHeight + 16,
+            bottom: MediaQuery.of(context).padding.bottom + 12,
             child: FloatingActionButton.extended(
               onPressed: isSplitsTab ? _openAddSplit : _openAddDue,
               backgroundColor: AppColors.primary,
@@ -519,8 +519,9 @@ class _DueCard extends StatelessWidget {
           return false; // we manage removal ourselves
         }
       },
-      child: GestureDetector(
-        onLongPress: onEdit,
+      child: InkWell(
+        onTap: onEdit,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           margin: const EdgeInsets.only(bottom: AppSpacing.sm),
           decoration: BoxDecoration(
@@ -573,6 +574,23 @@ class _DueCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (due.categoryName != null) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            if (due.categoryEmoji != null)
+                              Text(due.categoryEmoji!,
+                                  style: const TextStyle(fontSize: 11)),
+                            const SizedBox(width: 3),
+                            Text(
+                              due.categoryName!,
+                              style: AppTypography.labelSmall.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (due.dueDate != null) ...[
                         const SizedBox(height: 2),
                         Text(

@@ -10,6 +10,7 @@ import '../../../../core/network/api_client.dart';
 import '../../data/datasources/transaction_remote_datasource.dart';
 import '../../data/repositories/transaction_repository_impl.dart';
 import '../../domain/entities/transaction.dart';
+import '../../../analytics/presentation/providers/analytics_provider.dart';
 import '../../../dashboard/presentation/providers/summary_provider.dart';
 
 // ─── DI ───────────────────────────────────────────────────────────────────────
@@ -31,7 +32,7 @@ final transactionRepositoryProvider =
 class TransactionFilters {
   const TransactionFilters({
     this.type,
-    this.categoryId,
+    this.categoryIds = const [],
     this.search,
     this.startDate,
     this.endDate,
@@ -39,7 +40,7 @@ class TransactionFilters {
   });
 
   final String? type;        // 'INCOME' | 'EXPENSE' | null (all)
-  final String? categoryId;
+  final List<String> categoryIds;
   final String? search;
   final String? startDate;
   final String? endDate;
@@ -47,17 +48,18 @@ class TransactionFilters {
 
   TransactionFilters copyWith({
     String? type,
-    String? categoryId,
+    List<String>? categoryIds,
     String? search,
     String? startDate,
     String? endDate,
     int? page,
     bool clearType = false,
     bool clearSearch = false,
+    bool clearCategoryIds = false,
   }) {
     return TransactionFilters(
       type: clearType ? null : (type ?? this.type),
-      categoryId: categoryId ?? this.categoryId,
+      categoryIds: clearCategoryIds ? [] : (categoryIds ?? this.categoryIds),
       search: clearSearch ? null : (search ?? this.search),
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
@@ -83,7 +85,7 @@ class TransactionsNotifier extends AsyncNotifier<TransactionPage> {
     return repo.getTransactions(
       page: filters.page,
       type: filters.type,
-      categoryId: filters.categoryId,
+      categoryIds: filters.categoryIds,
       search: filters.search,
       startDate: filters.startDate,
       endDate: filters.endDate,
@@ -140,9 +142,11 @@ class TransactionsNotifier extends AsyncNotifier<TransactionPage> {
       categoryId: categoryId,
       excludeFromAnalytics: excludeFromAnalytics,
     );
-    // Refresh list and summary
+    // Refresh the history list and invalidate all summary/analytics caches
     await refresh();
     ref.invalidate(dashboardSummaryProvider);
+    ref.invalidate(monthlyTrendProvider);
+    ref.invalidate(categorySpendProvider);
     return tx;
   }
 
@@ -178,6 +182,8 @@ class TransactionsNotifier extends AsyncNotifier<TransactionPage> {
           hasPrev: page.hasPrev,
         ));
     ref.invalidate(dashboardSummaryProvider);
+    ref.invalidate(monthlyTrendProvider);
+    ref.invalidate(categorySpendProvider);
     return tx;
   }
 
@@ -196,6 +202,8 @@ class TransactionsNotifier extends AsyncNotifier<TransactionPage> {
       ),
     );
     ref.invalidate(dashboardSummaryProvider);
+    ref.invalidate(monthlyTrendProvider);
+    ref.invalidate(categorySpendProvider);
   }
 }
 

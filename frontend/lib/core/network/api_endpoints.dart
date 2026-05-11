@@ -15,10 +15,10 @@ abstract final class ApiEndpoints {
   static const String requestEmailChange = '/auth/request-email-change';
   static const String changePassword = '/auth/change-password';
 
-  // ─── Users ────────────────────────────────────────────────────────────────
-  static const String me = '/users/me';
-  static const String meCurrency = '/users/me/currency';
-  static const String meBudget = '/users/me/budget';
+  // ─── Current user ─────────────────────────────────────────────────────────
+  static const String me = '/auth/me';
+  static const String meCurrency = '/auth/me/currency';
+  static const String meBudget = '/auth/me/budget';
 
   // ─── Transactions ─────────────────────────────────────────────────────────
   static const String transactions = '/transactions';

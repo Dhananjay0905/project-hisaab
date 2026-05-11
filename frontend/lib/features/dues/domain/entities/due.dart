@@ -15,6 +15,9 @@ class Due {
     this.note,
     this.dueDate,
     this.paidAt,
+    this.categoryId,
+    this.categoryName,
+    this.categoryEmoji,
   });
 
   final String id;
@@ -27,6 +30,9 @@ class Due {
   final bool isPaid;
   final DateTime? paidAt;
   final DateTime createdAt;
+  final String? categoryId;
+  final String? categoryName;
+  final String? categoryEmoji;
 
   bool get isIOwe => type == 'I_OWE';
   bool get isTheyOwe => type == 'THEY_OWE';

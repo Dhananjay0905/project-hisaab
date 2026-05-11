@@ -37,6 +37,7 @@ class DuesRemoteDataSource {
     required String type,
     String? note,
     DateTime? dueDate,
+    String? categoryId,
   }) async {
     final response = await _client.post<Map<String, dynamic>>(
       ApiEndpoints.dues,
@@ -47,6 +48,7 @@ class DuesRemoteDataSource {
         'type': type,
         if (note != null && note.isNotEmpty) 'note': note,
         if (dueDate != null) 'dueDate': dueDate.toIso8601String(),
+        if (categoryId != null) 'categoryId': categoryId,
       },
     );
     final data = response.data!['data'] as Map<String, dynamic>;
@@ -61,6 +63,7 @@ class DuesRemoteDataSource {
     String? type,
     String? note,
     DateTime? dueDate,
+    String? categoryId,
   }) async {
     final response = await _client.put<Map<String, dynamic>>(
       ApiEndpoints.dueById(id),
@@ -71,6 +74,7 @@ class DuesRemoteDataSource {
         if (type != null) 'type': type,
         if (note != null) 'note': note,
         if (dueDate != null) 'dueDate': dueDate.toIso8601String(),
+        'categoryId': categoryId, // always send (null = remove category)
       },
     );
     final data = response.data!['data'] as Map<String, dynamic>;

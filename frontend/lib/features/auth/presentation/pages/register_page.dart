@@ -34,7 +34,26 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _confirmCtrl = TextEditingController();
   final _openingBalanceCtrl = TextEditingController();
 
+  // Keys so we can re-validate confirm field when password changes
+  final _confirmFieldKey = GlobalKey<FormFieldState>();
+
   String? _errorMessage;
+  int _passwordStrength = 0; // 0=empty 1=weak 2=fair 3=strong
+
+  void _onPasswordChanged(String value) {
+    int strength = 0;
+    if (value.isNotEmpty) strength = 1; // weak
+    if (value.length >= 8 &&
+        RegExp(r'[A-Za-z]').hasMatch(value) &&
+        RegExp(r'[0-9]').hasMatch(value)) strength = 2; // fair
+    if (value.length >= 10 &&
+        RegExp(r'[A-Za-z]').hasMatch(value) &&
+        RegExp(r'[0-9]').hasMatch(value) &&
+        RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(value)) strength = 3; // strong
+    setState(() => _passwordStrength = strength);
+    // Re-validate confirm field so mismatch error updates live
+    _confirmFieldKey.currentState?.validate();
+  }
 
   @override
   void dispose() {
@@ -67,11 +86,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     ref.read(authNotifierProvider).whenOrNull(
       error: (error, _) {
         setState(() {
-          _errorMessage = error is AuthFailure
-              ? error.message
-              : error is NetworkFailure
-                  ? error.message
-                  : 'Something went wrong. Please try again.';
+          if (error is Failure) {
+            _errorMessage = error.message;
+          } else {
+            _errorMessage = error
+                .toString()
+                .replaceAll('Exception: ', '')
+                .replaceAll('Error: ', '');
+          }
         });
       },
     );
@@ -193,20 +215,32 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           title: 'Security',
                           icon: Icons.shield_rounded,
                           children: [
+                            // Password field — AppTextField auto-adds eye toggle
                             AppTextField(
                               controller: _passwordCtrl,
                               label: 'Password',
-                              hint: 'Min. 8 characters',
+                              hint: 'Min. 8 chars, include a letter & number',
                               obscureText: true,
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.newPassword],
                               prefixIcon: const Icon(
                                   Icons.lock_outline_rounded,
                                   size: 20),
+                              onChanged: _onPasswordChanged,
                               validator: Validators.password,
                             ),
+
+                            // Password strength bar
+                            if (_passwordStrength > 0) ...[
+                              const SizedBox(height: 10),
+                              _PasswordStrengthBar(strength: _passwordStrength),
+                            ],
+
                             const SizedBox(height: 14),
+
+                            // Confirm password field — AppTextField auto-adds eye toggle
                             AppTextField(
+                              key: _confirmFieldKey,
                               controller: _confirmCtrl,
                               label: 'Confirm password',
                               hint: 'Repeat your password',
@@ -218,6 +252,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                               validator: (v) => Validators.confirmPassword(
                                   v, _passwordCtrl.text),
                             ),
+
+                            const SizedBox(height: 10),
+
+                            // Password rules hint
+                            _PasswordRulesHint(strength: _passwordStrength),
                           ],
                         ),
 
@@ -327,6 +366,129 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── Password strength bar ─────────────────────────────────────────────────────
+
+class _PasswordStrengthBar extends StatelessWidget {
+  const _PasswordStrengthBar({required this.strength});
+  final int strength; // 1=weak 2=fair 3=strong
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = ['', 'Weak', 'Fair', 'Strong'];
+    final colors = [
+      Colors.transparent,
+      const Color(0xFFE53935), // weak — red
+      const Color(0xFFF57C00), // fair — orange
+      const Color(0xFF2E7D32), // strong — green
+    ];
+    final color = colors[strength];
+    final label = labels[strength];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: List.generate(3, (i) {
+            final filled = i < strength;
+            return Expanded(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                height: 4,
+                margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
+                decoration: BoxDecoration(
+                  color: filled ? color : AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: AppTypography.labelSmall.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Password rules hint ───────────────────────────────────────────────────────
+
+class _PasswordRulesHint extends StatelessWidget {
+  const _PasswordRulesHint({required this.strength});
+  final int strength;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Password requirements:',
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          _RuleRow(text: 'At least 8 characters'),
+          _RuleRow(text: 'At least one letter (a–z or A–Z)'),
+          _RuleRow(text: 'At least one number (0–9)'),
+          _RuleRow(
+            text: 'Special character (!@#\$…) for strong password',
+            isOptional: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RuleRow extends StatelessWidget {
+  const _RuleRow({required this.text, this.isOptional = false});
+  final String text;
+  final bool isOptional;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 3),
+      child: Row(
+        children: [
+          Icon(
+            isOptional ? Icons.add_circle_outline_rounded : Icons.circle,
+            size: isOptional ? 12 : 6,
+            color: isOptional
+                ? AppColors.onSurfaceVariant.withValues(alpha: 0.5)
+                : AppColors.onSurfaceVariant.withValues(alpha: 0.4),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTypography.labelSmall.copyWith(
+                color: isOptional
+                    ? AppColors.onSurfaceVariant.withValues(alpha: 0.5)
+                    : AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

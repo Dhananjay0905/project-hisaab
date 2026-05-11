@@ -10,6 +10,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
+import '../../../categories/domain/entities/category.dart';
+import '../../../categories/presentation/providers/categories_provider.dart';
 import '../../domain/entities/split.dart';
 import '../providers/splits_provider.dart';
 
@@ -114,6 +116,148 @@ class _SplitCardState extends ConsumerState<SplitCard>
     if (ok == true) widget.onDelete();
   }
 
+  void _showEditSheet(BuildContext context) {
+    final titleCtrl = TextEditingController(text: widget.split.title);
+    final noteCtrl = TextEditingController(text: widget.split.note ?? '');
+    bool saving = false;
+    // Capture initial category from split
+    Category? sheetCategory;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).colorScheme.surfaceContainerLowest,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 40, height: 4,
+                      decoration: BoxDecoration(
+                        color: Theme.of(ctx).colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text('Edit Split',
+                      style: AppTypography.titleLarge
+                          .copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: AppSpacing.lg),
+                  // Title field
+                  Text('Title', style: AppTypography.labelMedium),
+                  const SizedBox(height: AppSpacing.xs),
+                  TextField(
+                    controller: titleCtrl,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Dinner at Barbeque Nation',
+                      filled: true,
+                      fillColor:
+                          Theme.of(ctx).colorScheme.surfaceContainerLow,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  // Category picker
+                  Text('Category', style: AppTypography.labelMedium),
+                  const SizedBox(height: AppSpacing.sm),
+                  _EditSheetCategoryPicker(
+                    currentCategoryId: widget.split.categoryId,
+                    selected: sheetCategory,
+                    onSelect: (c) => setSheetState(() => sheetCategory = c),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  // Note field
+                  Text('Note (optional)', style: AppTypography.labelMedium),
+                  const SizedBox(height: AppSpacing.xs),
+                  TextField(
+                    controller: noteCtrl,
+                    maxLines: 2,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: 'Any additional details…',
+                      filled: true,
+                      fillColor:
+                          Theme.of(ctx).colorScheme.surfaceContainerLow,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: FilledButton(
+                      onPressed: saving
+                          ? null
+                          : () async {
+                              final title = titleCtrl.text.trim();
+                              if (title.isEmpty) return;
+                              setSheetState(() => saving = true);
+                              try {
+                                await ref
+                                    .read(splitsProvider.notifier)
+                                    .updateSplit(
+                                      widget.split.id,
+                                      title: title,
+                                      note: noteCtrl.text.trim().isEmpty
+                                          ? null
+                                          : noteCtrl.text.trim(),
+                                      categoryId: sheetCategory?.id,
+                                    );
+                                if (ctx.mounted) Navigator.of(ctx).pop();
+                              } catch (_) {
+                                setSheetState(() => saving = false);
+                              }
+                            },
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: saving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Text('Save Changes'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.split;
@@ -156,6 +300,23 @@ class _SplitCardState extends ConsumerState<SplitCard>
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
+                            if (s.categoryName != null) ...[
+                              const SizedBox(height: 3),
+                              Row(
+                                children: [
+                                  if (s.categoryEmoji != null)
+                                    Text(s.categoryEmoji!,
+                                        style: const TextStyle(fontSize: 11)),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    s.categoryName!,
+                                    style: AppTypography.labelSmall.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -232,14 +393,24 @@ class _SplitCardState extends ConsumerState<SplitCard>
                   padding: const EdgeInsets.fromLTRB(
                       AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      TextButton.icon(
+                        onPressed: () => _showEditSheet(context),
+                        icon: const Icon(Icons.edit_outlined,
+                            size: 16, color: AppColors.primary),
+                        label: Text(
+                          'Edit',
+                          style: AppTypography.bodySmall
+                              .copyWith(color: AppColors.primary),
+                        ),
+                      ),
+                      const Spacer(),
                       TextButton.icon(
                         onPressed: _confirmDelete,
                         icon: const Icon(Icons.delete_outline_rounded,
                             size: 16, color: AppColors.error),
                         label: Text(
-                          'Delete Split',
+                          'Delete',
                           style: AppTypography.bodySmall
                               .copyWith(color: AppColors.error),
                         ),
@@ -497,6 +668,112 @@ class _PayDialogState extends State<_PayDialog> {
           child: const Text('Confirm'),
         ),
       ],
+    );
+  }
+}
+
+// ─── Edit Sheet Category Picker ───────────────────────────────────────────────
+
+class _EditSheetCategoryPicker extends ConsumerStatefulWidget {
+  const _EditSheetCategoryPicker({
+    required this.currentCategoryId,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final String? currentCategoryId;
+  final Category? selected;
+  final ValueChanged<Category?> onSelect;
+
+  @override
+  ConsumerState<_EditSheetCategoryPicker> createState() =>
+      _EditSheetCategoryPickerState();
+}
+
+class _EditSheetCategoryPickerState
+    extends ConsumerState<_EditSheetCategoryPicker> {
+  bool _resolved = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = ref.watch(expenseCategoriesProvider);
+
+    if (!_resolved && categories.isNotEmpty) {
+      _resolved = true;
+      if (widget.selected == null) {
+        Category? target;
+        if (widget.currentCategoryId != null) {
+          target = categories
+              .where((c) => c.id == widget.currentCategoryId)
+              .firstOrNull;
+        }
+        target ??= categories
+            .where((c) => c.name == 'Other Expenses')
+            .firstOrNull ?? categories.first;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) widget.onSelect(target);
+        });
+      }
+    }
+
+    if (categories.isEmpty) {
+      return const SizedBox(
+        height: 48,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final cat = categories[i];
+          final isSelected = widget.selected?.id == cat.id;
+          return GestureDetector(
+            onTap: () {
+              if (!isSelected) widget.onSelect(cat);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.cashOut
+                    : Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.cashOut
+                      : Theme.of(context)
+                          .colorScheme
+                          .outlineVariant
+                          .withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(cat.emoji, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                  Text(
+                    cat.name,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: isSelected
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

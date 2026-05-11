@@ -12,6 +12,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
+import '../../../categories/domain/entities/category.dart';
+import '../../../categories/presentation/providers/categories_provider.dart';
 import '../../domain/entities/due.dart';
 import '../providers/dues_provider.dart';
 
@@ -41,6 +43,7 @@ class _AddDuePageState extends ConsumerState<AddDuePage>
   DateTime? _selectedDueDate;
   bool _isSubmitting = false;
   String? _errorMessage;
+  Category? _selectedCategory;
 
   late AnimationController _typeAnimController;
   late Animation<Color?> _accentAnimation;
@@ -57,6 +60,7 @@ class _AddDuePageState extends ConsumerState<AddDuePage>
     _personNameController.text = e?.personName ?? '';
     _noteController.text = e?.note ?? '';
     _selectedDueDate = e?.dueDate;
+    // category is resolved after first build when categories load
 
     _typeAnimController = AnimationController(
       vsync: this,
@@ -82,7 +86,10 @@ class _AddDuePageState extends ConsumerState<AddDuePage>
 
   void _toggleType(String newType) {
     if (newType == _type) return;
-    setState(() => _type = newType);
+    setState(() {
+      _type = newType;
+      _selectedCategory = null; // clear category when type changes
+    });
     if (newType == 'THEY_OWE') {
       _typeAnimController.forward();
     } else {
@@ -118,6 +125,10 @@ class _AddDuePageState extends ConsumerState<AddDuePage>
       setState(() => _errorMessage = 'Please enter the person\'s name.');
       return;
     }
+    if (_selectedCategory == null) {
+      setState(() => _errorMessage = 'Please select a category.');
+      return;
+    }
 
     setState(() { _isSubmitting = true; _errorMessage = null; });
 
@@ -135,6 +146,7 @@ class _AddDuePageState extends ConsumerState<AddDuePage>
               type: _type,
               note: note,
               dueDate: _selectedDueDate,
+              categoryId: _selectedCategory?.id,
             );
       } else {
         await ref.read(duesProvider.notifier).addDue(
@@ -144,6 +156,7 @@ class _AddDuePageState extends ConsumerState<AddDuePage>
               type: _type,
               note: note,
               dueDate: _selectedDueDate,
+              categoryId: _selectedCategory?.id,
             );
       }
 
@@ -207,6 +220,17 @@ class _AddDuePageState extends ConsumerState<AddDuePage>
                       _AmountField(
                         controller: _amountController,
                         accentColor: accent,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // ── Category ─────────────────────────────────────────────
+                      _SectionLabel('Category'),
+                      const SizedBox(height: AppSpacing.sm),
+                      _DueCategoryRow(
+                        type: _type,
+                        selected: _selectedCategory,
+                        existingCategoryId: widget.existing?.categoryId,
+                        onSelect: (cat) => setState(() => _selectedCategory = cat),
                       ),
                       const SizedBox(height: AppSpacing.lg),
 
@@ -554,6 +578,114 @@ class _DatePickerTile extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Due Category Row (horizontal chips) ─────────────────────────────────────
+
+class _DueCategoryRow extends ConsumerStatefulWidget {
+  const _DueCategoryRow({
+    required this.type,
+    required this.selected,
+    required this.onSelect,
+    this.existingCategoryId,
+  });
+
+  /// 'I_OWE' → EXPENSE categories (red accent)
+  /// 'THEY_OWE' → INCOME categories (green accent)
+  final String type;
+  final Category? selected;
+  final ValueChanged<Category?> onSelect;
+  final String? existingCategoryId;
+
+  @override
+  ConsumerState<_DueCategoryRow> createState() => _DueCategoryRowState();
+}
+
+class _DueCategoryRowState extends ConsumerState<_DueCategoryRow> {
+  bool _defaultSet = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final catType = widget.type == 'I_OWE' ? 'EXPENSE' : 'INCOME';
+    final categories = ref.watch(
+      catType == 'EXPENSE' ? expenseCategoriesProvider : incomeCategoriesProvider,
+    );
+
+    // Resolve pre-selected category (edit mode or default)
+    if (!_defaultSet && categories.isNotEmpty) {
+      _defaultSet = true;
+      Category? target;
+      if (widget.existingCategoryId != null) {
+        target = categories.where((c) => c.id == widget.existingCategoryId).firstOrNull;
+      }
+      target ??= categories
+          .where((c) => c.name == (catType == 'EXPENSE' ? 'Other Expenses' : 'Other Income'))
+          .firstOrNull ?? categories.first;
+      if (widget.selected == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) widget.onSelect(target);
+        });
+      }
+    }
+
+    final accent = widget.type == 'I_OWE' ? AppColors.cashOut : AppColors.cashIn;
+
+    if (categories.isEmpty) {
+      return const SizedBox(
+        height: 48,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final cat = categories[i];
+          final isSelected = widget.selected?.id == cat.id;
+          return GestureDetector(
+            onTap: () {
+              if (!isSelected) widget.onSelect(cat);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? accent
+                    : Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected
+                      ? accent
+                      : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(cat.emoji, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                  Text(
+                    cat.name,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: isSelected
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

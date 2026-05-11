@@ -30,6 +30,16 @@ import '../features/wishlist/presentation/pages/wishlist_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/analytics/presentation/pages/analytics_page.dart';
 import '../shared/widgets/app_shell.dart';
+// Data providers — invalidated on sign-out
+import '../features/analytics/presentation/providers/analytics_provider.dart';
+import '../features/categories/presentation/providers/categories_provider.dart';
+import '../features/dashboard/presentation/providers/summary_provider.dart';
+import '../features/dues/presentation/providers/dues_provider.dart';
+import '../features/recurring/presentation/providers/recurring_provider.dart';
+import '../features/savings/presentation/providers/savings_provider.dart';
+import '../features/splits/presentation/providers/splits_provider.dart';
+import '../features/transactions/presentation/providers/transactions_provider.dart';
+import '../features/wishlist/presentation/providers/wishlist_provider.dart';
 
 // ─── Auth redirect notifier ───────────────────────────────────────────────────
 
@@ -37,7 +47,32 @@ class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(this._ref) {
     _ref.listen<AsyncValue<AuthStatus>>(
       authNotifierProvider,
-      (_, __) => notifyListeners(),
+      (prev, next) {
+        // Invalidate all user-scoped data providers when a NEW user logs in.
+        // This ensures stale data from the previous account is never shown.
+        // We do this on LOGIN (not logout) so the token is already valid
+        // by the time providers rebuild — avoiding 401s from re-fetching
+        // with no credentials.
+        final wasLoggedOut = prev?.valueOrNull is AuthUnauthenticated ||
+            prev?.valueOrNull is AuthSessionExpired ||
+            prev?.valueOrNull == null;
+        final isNowAuthenticated = next.valueOrNull is AuthAuthenticated;
+        if (wasLoggedOut && isNowAuthenticated) {
+          _ref.invalidate(transactionsProvider);
+          _ref.invalidate(categoriesProvider);
+          _ref.invalidate(dashboardSummaryProvider);
+          _ref.invalidate(duesProvider);
+          _ref.invalidate(duesSummaryProvider);
+          _ref.invalidate(recurringProvider);
+          _ref.invalidate(dueRecurringProvider);
+          _ref.invalidate(savingsProvider);
+          _ref.invalidate(splitsProvider);
+          _ref.invalidate(wishlistProvider);
+          _ref.invalidate(monthlyTrendProvider);
+          _ref.invalidate(categorySpendProvider);
+        }
+        notifyListeners();
+      },
     );
   }
 

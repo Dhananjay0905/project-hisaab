@@ -61,22 +61,6 @@ class HomePage extends ConsumerWidget {
               elevation: 0,
               expandedHeight: 100,
               title: Text('Hisaab', style: AppTypography.titleLarge),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: AppSpacing.sm),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.notifications_none_rounded),
-                      onPressed: () {},
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                ),
-              ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Padding(
                   padding: EdgeInsets.only(

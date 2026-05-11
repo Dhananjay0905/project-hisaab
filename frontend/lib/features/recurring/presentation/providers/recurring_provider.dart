@@ -7,6 +7,9 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../../analytics/presentation/providers/analytics_provider.dart';
+import '../../../dashboard/presentation/providers/summary_provider.dart';
+import '../../../transactions/presentation/providers/transactions_provider.dart';
 import '../../data/datasources/recurring_remote_datasource.dart';
 import '../../domain/entities/recurring_transaction.dart';
 
@@ -92,6 +95,11 @@ class RecurringNotifier
     ref.invalidateSelf();
     // Also invalidate the due-list so dialogs disappear
     ref.invalidate(dueRecurringProvider);
+    // A real transaction was just created — refresh history, home & analytics
+    ref.invalidate(transactionsProvider);
+    ref.invalidate(dashboardSummaryProvider);
+    ref.invalidate(monthlyTrendProvider);
+    ref.invalidate(categorySpendProvider);
   }
 
   Future<void> remove(String id) async {
