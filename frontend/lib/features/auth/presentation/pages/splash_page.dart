@@ -128,7 +128,8 @@ class _SplashPageState extends ConsumerState<SplashPage>
                             width: 110,
                             height: 110,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
+                              color: const Color(0xFF1549E5), // fill transparent corners
+                              borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(
                                   color: AppColors.primary
@@ -144,31 +145,13 @@ class _SplashPageState extends ConsumerState<SplashPage>
                                 ),
                               ],
                             ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF1549E5),
-                                    Color(0xFF3861FB),
-                                    Color(0xFF849AFF),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(30),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.primary
-                                        .withValues(alpha: 0.35),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.account_balance_wallet_rounded,
-                                color: Colors.white,
-                                size: 48,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(30),
+                              child: Image.asset(
+                                'assets/icons/app_icon.png',
+                                width: 110,
+                                height: 110,
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),

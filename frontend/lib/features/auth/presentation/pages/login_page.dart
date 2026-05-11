@@ -117,18 +117,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 // ── Logo row ──────────────────────────────────────────
                 Row(
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        boxShadow: AppColors.cardShadow,
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: AppColors.onPrimary,
-                        size: 26,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        'assets/icons/app_icon.png',
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
                       ),
                     ),
                     const SizedBox(width: 14),
