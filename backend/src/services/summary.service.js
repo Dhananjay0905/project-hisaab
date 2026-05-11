@@ -6,9 +6,11 @@
  * needed for aggregation. Only recentTransactions need title decryption.
  *
  * Exclusion rule:
- *  A transaction is excluded from all summary aggregates if:
- *   - The transaction itself has excludeFromAnalytics = true, OR
- *   - The transaction's category has excludeFromAnalytics = true
+ *  "excludeFromAnalytics" affects ONLY charts/analytics (the Analytics page).
+ *  The balance (currentBalance, totalIncome, totalExpenses) always counts
+ *  every non-deleted transaction — excluded or not.
+ *  The dashboard month stats and topCategories omit excluded transactions
+ *  since those are "insight" numbers like the Analytics page.
  */
 
 const { PrismaClient } = require('@prisma/client');
@@ -32,18 +34,22 @@ async function getSummary(userId) {
   });
   const excludedCatIds = excludedCats.map((c) => c.id);
 
-  // Base exclusion filter appended to every aggregate query
-  const exclusionFilter = {
+  // Analytics exclusion filter — applied only to "insight" numbers (month stats,
+  // top categories). NOT applied to balance aggregates.
+  const analyticsFilter = {
     excludeFromAnalytics: false,
     ...(excludedCatIds.length > 0
       ? { categoryId: { notIn: excludedCatIds } }
       : {}),
   };
 
-  const baseWhere  = { userId, deletedAt: null, ...exclusionFilter };
-  const monthWhere = { userId, deletedAt: null, date: { gte: monthStart, lte: monthEnd }, ...exclusionFilter };
+  // ── Balance base filters (NO exclusion — excluded txns still affect balance) ──
+  const balanceWhere = { userId, deletedAt: null };
 
-  // Recent transactions are shown regardless of exclusion (user should see them)
+  // ── Month analytics filters (WITH exclusion — insight numbers only) ────────
+  const monthAnalyticsWhere = { userId, deletedAt: null, date: { gte: monthStart, lte: monthEnd }, ...analyticsFilter };
+
+  // Recent transactions are shown regardless of exclusion
   const recentWhere = { userId, deletedAt: null };
 
   const [
@@ -57,25 +63,24 @@ async function getSummary(userId) {
     topCatsRaw,
   ] = await prisma.$transaction([
     prisma.user.findUnique({ where: { id: userId }, select: { openingBalance: true, currency: true, currencySymbol: true } }),
-    // All-time aggregates (excluded txns not counted)
-    prisma.transaction.aggregate({ where: { ...baseWhere, type: 'INCOME' }, _sum: { amount: true } }),
-    prisma.transaction.aggregate({ where: { ...baseWhere, type: 'EXPENSE' }, _sum: { amount: true } }),
-    // This month aggregates (excluded txns not counted)
-    prisma.transaction.aggregate({ where: { ...monthWhere, type: 'INCOME' }, _sum: { amount: true } }),
-    prisma.transaction.aggregate({ where: { ...monthWhere, type: 'EXPENSE' }, _sum: { amount: true } }),
-    // Transaction count — only non-excluded
-    prisma.transaction.count({ where: monthWhere }),
-    // Last 5 transactions (shown regardless of exclusion flag — user should see them)
+    // ── Balance aggregates — ALL transactions (excluded ones still count) ──
+    prisma.transaction.aggregate({ where: { ...balanceWhere, type: 'INCOME' }, _sum: { amount: true } }),
+    prisma.transaction.aggregate({ where: { ...balanceWhere, type: 'EXPENSE' }, _sum: { amount: true } }),
+    // ── Month insight aggregates — excluded transactions omitted ──
+    prisma.transaction.aggregate({ where: { ...monthAnalyticsWhere, type: 'INCOME' }, _sum: { amount: true } }),
+    prisma.transaction.aggregate({ where: { ...monthAnalyticsWhere, type: 'EXPENSE' }, _sum: { amount: true } }),
+    prisma.transaction.count({ where: monthAnalyticsWhere }),
+    // ── Recent transactions — always show all ──
     prisma.transaction.findMany({
       where: recentWhere,
       include: { category: { select: { id: true, name: true, emoji: true, type: true } } },
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       take: 5,
     }),
-    // Top EXPENSE categories this month (excluded txns/categories not counted)
+    // ── Top EXPENSE categories this month — excluded omitted ──
     prisma.transaction.groupBy({
       by: ['categoryId'],
-      where: { ...monthWhere, type: 'EXPENSE', categoryId: { not: null } },
+      where: { ...monthAnalyticsWhere, type: 'EXPENSE', categoryId: { not: null } },
       _sum: { amount: true },
       orderBy: { _sum: { amount: 'desc' } },
       take: 5,

@@ -8,6 +8,7 @@
 
 const { PrismaClient } = require('@prisma/client');
 const { createError } = require('../middleware/errorHandler');
+const { encrypt, decrypt } = require('../utils/encrypt');
 
 const prisma = new PrismaClient();
 
@@ -93,7 +94,7 @@ async function createRecurring(userId, { title, amount, type, categoryId, freque
   const item = await prisma.recurringTransaction.create({
     data: {
       userId,
-      title: title.trim(),
+      title: encrypt(title.trim()),
       amount: parseFloat(amount),
       type,
       categoryId: finalCategoryId,
@@ -134,7 +135,7 @@ async function updateRecurring(userId, id, { title, amount, type, categoryId, fr
   const updated = await prisma.recurringTransaction.update({
     where: { id: item.id },
     data: {
-      ...(title ? { title: title.trim() } : {}),
+      ...(title ? { title: encrypt(title.trim()) } : {}),
       ...(amount != null ? { amount: parseFloat(amount) } : {}),
       ...(type ? { type } : {}),
       categoryId: finalCategoryId,
@@ -177,12 +178,12 @@ async function confirmDue(userId, id) {
     prisma.transaction.create({
       data: {
         userId,
-        title: item.title,
+        title: item.title, // already encrypted in recurring table!
         amount: item.amount,
         type: item.type,
         categoryId: item.categoryId,
         date: new Date(),
-        note: `Auto-added from recurring: ${item.title}`,
+        note: encrypt(`Auto-added from recurring: ${decrypt(item.title)}`),
       },
     }),
     prisma.recurringTransaction.update({
@@ -195,8 +196,8 @@ async function confirmDue(userId, id) {
     message: 'Transaction added and next due date advanced.',
     transaction: {
       id: transaction.id,
-      title: transaction.title,
-      amount: transaction.amount,
+      title: decrypt(transaction.title),
+      amount: parseFloat(transaction.amount),
       type: transaction.type,
       date: transaction.date,
     },
@@ -223,10 +224,13 @@ async function _findOwned(userId, id) {
 }
 
 function _format(item) {
+  let decryptedTitle = '[encrypted]';
+  try { decryptedTitle = decrypt(item.title); } catch (_) {}
+
   return {
     id: item.id,
-    title: item.title,
-    amount: item.amount,
+    title: decryptedTitle,
+    amount: parseFloat(item.amount),
     type: item.type,
     frequency: item.frequency,
     startDate: item.startDate,

@@ -98,6 +98,8 @@ model Category {
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
   recurringTxns RecurringTransaction[]
+  dues         Due[]
+  splits       Split[]
 
   @@index([userId])
 }
@@ -153,6 +155,7 @@ model RecurringTransaction {
 model Due {
   id          String    @id @default(cuid())
   userId      String
+  categoryId  String?
   // Encrypted — personal identifiers
   title       String
   personName  String
@@ -168,6 +171,7 @@ model Due {
   updatedAt   DateTime  @updatedAt
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([userId, isPaid])
   @@index([userId, deletedAt])
@@ -215,6 +219,7 @@ model WishlistItem {
 model Split {
   id          String    @id @default(cuid())
   userId      String
+  categoryId  String?
   // Encrypted — personal identifier
   title       String
   note        String?
@@ -226,6 +231,7 @@ model Split {
   updatedAt   DateTime  @updatedAt
 
   user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   participants SplitParticipant[]
 
   @@index([userId])

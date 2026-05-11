@@ -23,6 +23,10 @@ function decryptSplit(split) {
     note: split.note ? decrypt(split.note) : null,
     totalAmount: Number(split.totalAmount),
     participants: (split.participants || []).map(decryptParticipant),
+    categoryId: split.categoryId ?? null,
+    category: split.category
+      ? { id: split.category.id, name: split.category.name, emoji: split.category.emoji }
+      : null,
   };
 }
 
@@ -43,7 +47,7 @@ function decryptParticipant(p) {
 async function listSplits(userId) {
   const splits = await prisma.split.findMany({
     where: { userId, deletedAt: null },
-    include: { participants: { orderBy: { createdAt: 'asc' } } },
+    include: { participants: { orderBy: { createdAt: 'asc' } }, category: true },
     orderBy: { date: 'desc' },
   });
   return splits.map(decryptSplit);
@@ -59,7 +63,7 @@ async function listSplits(userId) {
  * @param {string}   [data.note]
  * @param {string}   [data.date]            — ISO date string
  */
-async function createSplit(userId, { title, totalAmount, participantNames, note, date }) {
+async function createSplit(userId, { title, totalAmount, participantNames, note, date, categoryId }) {
   const count = participantNames.length;
   if (count < 1) throw new Error('At least one participant required.');
 
@@ -71,6 +75,7 @@ async function createSplit(userId, { title, totalAmount, participantNames, note,
       title: encrypt(title),
       note: note ? encrypt(note) : null,
       totalAmount,
+      categoryId: categoryId || null,
       date: date ? new Date(date) : new Date(),
       participants: {
         create: participantNames.map((name) => ({
@@ -79,7 +84,7 @@ async function createSplit(userId, { title, totalAmount, participantNames, note,
         })),
       },
     },
-    include: { participants: { orderBy: { createdAt: 'asc' } } },
+    include: { participants: { orderBy: { createdAt: 'asc' } }, category: true },
   });
 
   return decryptSplit(split);
@@ -88,7 +93,7 @@ async function createSplit(userId, { title, totalAmount, participantNames, note,
 /**
  * Update the title/note of a split (not amounts — those are fixed at creation).
  */
-async function updateSplit(userId, splitId, { title, note }) {
+async function updateSplit(userId, splitId, { title, note, categoryId }) {
   const split = await prisma.split.findFirst({ where: { id: splitId, userId, deletedAt: null } });
   if (!split) throw new Error('Split not found.');
 
@@ -97,8 +102,9 @@ async function updateSplit(userId, splitId, { title, note }) {
     data: {
       title: title !== undefined ? encrypt(title) : split.title,
       note: note !== undefined ? (note ? encrypt(note) : null) : split.note,
+      ...(categoryId !== undefined && { categoryId: categoryId || null }),
     },
-    include: { participants: { orderBy: { createdAt: 'asc' } } },
+    include: { participants: { orderBy: { createdAt: 'asc' } }, category: true },
   });
 
   return decryptSplit(updated);
@@ -144,10 +150,14 @@ async function markParticipantPaid(userId, splitId, participantId, createTransac
   let transaction = null;
 
   if (createTransaction) {
-    // Find the "Other Income" default category for this user
-    const otherIncome = await prisma.category.findFirst({
-      where: { userId, name: 'Other Income', isDefault: true },
-    });
+    // Find the split's category, or fall back to "Other Income"
+    let incomeCategoryId = split.categoryId || null;
+    if (!incomeCategoryId) {
+      const otherIncome = await prisma.category.findFirst({
+        where: { userId, name: 'Other Income', isDefault: true },
+      });
+      incomeCategoryId = otherIncome?.id ?? null;
+    }
 
     const decryptedSplitTitle = decrypt(split.title);
     const decryptedName = decrypt(participant.name);
@@ -155,7 +165,7 @@ async function markParticipantPaid(userId, splitId, participantId, createTransac
     transaction = await prisma.transaction.create({
       data: {
         userId,
-        categoryId: otherIncome?.id ?? null,
+        categoryId: incomeCategoryId,
         title: encrypt(`Split: ${decryptedSplitTitle} — from ${decryptedName}`),
         amount: paidAmount != null ? paidAmount : participant.amount,
         type: 'INCOME',

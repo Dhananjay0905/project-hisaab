@@ -43,6 +43,10 @@ function _format(due) {
     paidAt: due.paidAt,
     createdAt: due.createdAt,
     updatedAt: due.updatedAt,
+    categoryId: due.categoryId ?? null,
+    category: due.category
+      ? { id: due.category.id, name: due.category.name, emoji: due.category.emoji }
+      : null,
   };
 }
 
@@ -66,6 +70,7 @@ async function getDues(userId, query = {}) {
 
   const dues = await prisma.due.findMany({
     where,
+    include: { category: true },
     orderBy: [
       { isPaid: 'asc' },      // pending first
       { dueDate: 'asc' },     // earliest deadline first
@@ -86,9 +91,11 @@ async function createDue(userId, data) {
       personName: encrypt(data.personName),
       note: encryptOptional(data.note),
       amount: data.amount,
-      type: data.type,            // 'I_OWE' | 'THEY_OWE'
+      type: data.type,
+      categoryId: data.categoryId || null,
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
     },
+    include: { category: true },
   });
 
   return _format(due);
@@ -112,7 +119,9 @@ async function updateDue(userId, id, data) {
       ...(data.amount !== undefined && { amount: data.amount }),
       ...(data.type !== undefined && { type: data.type }),
       ...(data.dueDate !== undefined && { dueDate: data.dueDate ? new Date(data.dueDate) : null }),
+      ...(data.categoryId !== undefined && { categoryId: data.categoryId || null }),
     },
+    include: { category: true },
   });
 
   return _format(updated);
@@ -148,6 +157,7 @@ async function settleDue(userId, id, { logAsTransaction = false } = {}) {
           amount: existing.amount,
           type: txType,
           date: now,
+          categoryId: existing.categoryId || null,
         },
       });
     }

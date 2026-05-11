@@ -28,8 +28,8 @@ async function createCategory(req, res, next) {
       return next(createError('Validation failed.', 422, 'VALIDATION_ERROR', { errors: errors.array() }));
     }
 
-    const { name, emoji, type, monthlyLimit } = req.body;
-    const category = await categoriesService.createCategory(req.user.id, { name, emoji, type, monthlyLimit });
+    const { name, emoji, type, monthlyLimit, excludeFromAnalytics } = req.body;
+    const category = await categoriesService.createCategory(req.user.id, { name, emoji, type, monthlyLimit, excludeFromAnalytics });
     sendSuccess(res, { category }, 201);
   } catch (err) {
     next(err);
@@ -45,8 +45,8 @@ async function updateCategory(req, res, next) {
       return next(createError('Validation failed.', 422, 'VALIDATION_ERROR', { errors: errors.array() }));
     }
 
-    const { name, emoji, monthlyLimit } = req.body;
-    const category = await categoriesService.updateCategory(req.user.id, req.params.id, { name, emoji, monthlyLimit });
+    const { name, emoji, monthlyLimit, excludeFromAnalytics } = req.body;
+    const category = await categoriesService.updateCategory(req.user.id, req.params.id, { name, emoji, monthlyLimit, excludeFromAnalytics });
     sendSuccess(res, { category });
   } catch (err) {
     next(err);

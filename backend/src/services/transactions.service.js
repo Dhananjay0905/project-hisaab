@@ -67,11 +67,22 @@ async function getTransactions(userId, query = {}) {
   const skip = (page - 1) * limit;
 
   // Build where clause
+  // categoryIds = comma-separated list (multi-select filter)
+  // categoryId  = legacy single-id filter (kept for backwards compat)
+  const categoryIdsList =
+    query.categoryIds
+      ? query.categoryIds.split(',').map((s) => s.trim()).filter(Boolean)
+      : query.categoryId
+      ? [query.categoryId]
+      : [];
+
   const where = {
     userId,
     deletedAt: null,
     ...(query.type ? { type: query.type } : {}),
-    ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+    ...(categoryIdsList.length > 0
+      ? { categoryId: { in: categoryIdsList } }
+      : {}),
     ...(query.startDate || query.endDate
       ? {
           date: {
