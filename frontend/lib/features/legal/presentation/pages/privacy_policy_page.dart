@@ -96,83 +96,143 @@ class PrivacyPolicyPage extends StatelessWidget {
                         icon: Icons.info_outline_rounded,
                         title: '1. Who We Are',
                         content:
-                            'Hisaab is a personal finance tracking app built and operated by its developer for private use among a group of trusted users. We are not a registered business. You can reach us at the contact information provided in the app.',
+                            'Hisaab ("we", "us", "our") is a personal finance tracking application built and operated as an independent project. Hisaab is not a financial institution, bank, or regulated financial service.',
                       ),
                       const SizedBox(height: 14),
                       _PolicySection(
                         icon: Icons.folder_outlined,
                         title: '2. What Data We Collect',
                         content:
-                            '• Your name and email address (for your account)\n'
-                            '• A bcrypt hash of your password (we never store the plaintext)\n'
-                            '• Financial records you enter: transactions, dues, splits, savings, wishlist items, recurring items\n'
-                            '• Your currency preference and opening balance\n'
-                            '• Server logs: IP address, request path, HTTP method, timestamp — retained for 30 days\n'
-                            '• Your IP address is temporarily tracked in-memory to enforce rate limits and brute-force protection',
+                            'Account Data:\n'
+                            '• Display name, currency preference, opening balance, and creation date (Not encrypted).\n'
+                            '• Email address (Not encrypted — required for login and emails).\n'
+                            '• Password (bcrypt hash only — never stored as plaintext).\n\n'
+                            'Financial Records:\n'
+                            '• Transactions: Title & Note (AES-256-GCM encrypted). Amount, Type, Date, Category (Not encrypted).\n'
+                            '• Categories: Name, Emoji, Type, Limit (Not encrypted).\n'
+                            '• Dues: Title, Person\'s name, Note (AES-256-GCM encrypted). Amount, Date, Status (Not encrypted).\n'
+                            '• Splits: Title, Note, Participant names (AES-256-GCM encrypted). Amounts, Date (Not encrypted).\n'
+                            '• Savings: Total amount, Cash deduction (Not encrypted).\n'
+                            '• Wishlist: Title (AES-256-GCM encrypted). Emoji, URL, Price, Amount saved (Not encrypted).\n'
+                            '• Recurring: Title (AES-256-GCM encrypted). Amount, Type, Frequency, Next due date (Not encrypted).\n\n'
+                            'Tokens & Technical Data:\n'
+                            '• Auth tokens are stored in device secure storage.\n'
+                            '• Server logs (IP, path, timestamp) retained for 30 days. IP is tracked in-memory for rate limiting.',
                       ),
                       const SizedBox(height: 14),
                       _PolicySection(
                         icon: Icons.lock_outline_rounded,
-                        title: '3. What Is Encrypted',
+                        title: '3. What Is & Is Not Encrypted',
                         content:
                             'Encrypted with AES-256-GCM:\n'
-                            '• Transaction titles & notes\n'
-                            '• Due titles, person names & notes\n'
-                            '• Split titles, notes & participant names\n'
+                            '• Transaction titles and notes\n'
+                            '• Due titles, person names, and notes\n'
+                            '• Split titles, notes, and participant names\n'
                             '• Wishlist item titles\n'
                             '• Recurring transaction titles\n\n'
-                            'Stored as plaintext:\n'
-                            '• Your name and email\n'
-                            '• All numeric amounts (required for aggregations)\n'
-                            '• Category names, dates, status flags\n\n'
-                            '⚠️ Hisaab uses server-side encryption, not end-to-end encryption. The operator can technically decrypt encrypted fields.',
+                            'Not Encrypted (stored as plaintext):\n'
+                            '• Your name and email address\n'
+                            '• All numeric amounts\n'
+                            '• Category names and emojis\n'
+                            '• Dates and timestamps\n'
+                            '• Boolean flags (paid/unpaid, income/expense)\n'
+                            '• Wishlist URLs\n\n'
+                            '⚠️ Operator Access: Hisaab uses server-side encryption. The encryption key lives on the server. While we do not read your data, the operator is technically capable of decrypting it.',
                       ),
                       const SizedBox(height: 14),
                       _PolicySection(
-                        icon: Icons.key_outlined,
-                        title: '4. Authentication & Sessions',
+                        icon: Icons.pie_chart_outline_rounded,
+                        title: '4. How We Use Your Data',
                         content:
-                            '• Passwords are hashed with bcrypt (cost factor 12) — we cannot recover your password\n'
-                            '• Access tokens (JWT): valid for 15 minutes\n'
-                            '• Refresh tokens: valid for 30 days, stored as hashed records\n'
-                            '• Both tokens are invalidated on logout and account deletion',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.gavel_rounded,
-                        title: '5. Your Rights (GDPR & CCPA)',
-                        content:
-                            '• Right to Access: request a copy of your data\n'
-                            '• Right to Deletion: delete your account (5-day grace period)\n'
-                            '• Right to Rectification: update your name and email in-app\n'
-                            '• Right to Portability: contact the developer for a data export\n'
-                            '• We do not sell, share, or use your data for advertising',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.cookie_outlined,
-                        title: '6. Cookies',
-                        content:
-                            'The Hisaab mobile app does not use cookies. Session tokens are stored in your device\'s secure storage (Android Keystore / iOS Keychain). The backend does not set any cookies.',
+                            'We use your data for:\n'
+                            '• Providing the app (storing and displaying records)\n'
+                            '• Account authentication\n'
+                            '• Sending transactional emails (verification, resets)\n'
+                            '• Security monitoring and rate limiting\n'
+                            '• Responding to support requests\n\n'
+                            'We do not use your data for advertising, profiling, or sale to third parties. We have no advertising partners.',
                       ),
                       const SizedBox(height: 14),
                       _PolicySection(
                         icon: Icons.cloud_outlined,
-                        title: '7. Where Data Is Stored',
+                        title: '5. Where Your Data Is Stored',
                         content:
-                            '• Database: PostgreSQL hosted on Neon (Neon Tech, Inc.)\n'
-                            '  Region: AWS ap-southeast-1 (Singapore)\n'
-                            '• Backend: Node.js server hosted on Render\n'
-                            '  Region: Oregon, USA\n'
-                            '• Email delivery: Brevo (Sendinblue S.A.S., France)\n\n'
-                            'Data is transmitted over HTTPS (TLS 1.2+) at all times.',
+                            '• Database (Neon/AWS): ap-southeast-1 (Singapore)\n'
+                            '• API Server (Render): Oregon, USA\n'
+                            '• Email Delivery (Brevo): European Union (France)\n\n'
+                            'Your data is transmitted over HTTPS at all times. Transfers to third countries are covered by Data Processing Agreements and Standard Contractual Clauses.',
+                      ),
+                      const SizedBox(height: 14),
+                      _PolicySection(
+                        icon: Icons.access_time_rounded,
+                        title: '6. Data Retention',
+                        content:
+                            '• Your account and financial records are retained until you delete your account.\n'
+                            '• Deleted account data is permanently erased after the 5-day grace period expires.\n'
+                            '• Server access logs are purged after 30 days.\n'
+                            '• Password reset / email change tokens expire in 1 hour.',
+                      ),
+                      const SizedBox(height: 14),
+                      _PolicySection(
+                        icon: Icons.delete_outline_rounded,
+                        title: '7. Account Deletion & Erasure',
+                        content:
+                            'You can delete your account from More → Delete Account. This initiates a 5-day grace period. If you do not log in within 5 days, all your data is permanently and irreversibly deleted. There are no backups of your data after deletion.',
+                      ),
+                      const SizedBox(height: 14),
+                      _PolicySection(
+                        icon: Icons.cookie_outlined,
+                        title: '8. Cookies & Local Storage',
+                        content:
+                            'Hisaab is a mobile app and does not use browser cookies. We use device secure storage (iOS Keychain / Android Keystore) to store your JWT access/refresh tokens. These are cleared when you log out.',
+                      ),
+                      const SizedBox(height: 14),
+                      _PolicySection(
+                        icon: Icons.gavel_rounded,
+                        title: '9. Your Rights Under GDPR',
+                        content:
+                            'If you are in the EEA or UK, you have the right to:\n'
+                            '• Access your data (view in-app)\n'
+                            '• Rectify your data (update in Profile)\n'
+                            '• Erasure (delete account)\n'
+                            '• Data portability (email us for a JSON export)\n'
+                            '• Object to or restrict processing\n'
+                            '• Withdraw consent',
+                      ),
+                      const SizedBox(height: 14),
+                      _PolicySection(
+                        icon: Icons.shield_outlined,
+                        title: '10. Your Rights Under CCPA',
+                        content:
+                            'California residents have the right to know, delete, and correct their personal information, and the right to non-discrimination. We do not sell or share your personal information. Contact us to exercise these rights.',
+                      ),
+                      const SizedBox(height: 14),
+                      _PolicySection(
+                        icon: Icons.child_care_rounded,
+                        title: '11. Children\'s Privacy',
+                        content:
+                            'Hisaab is not directed at children under the age of 13 (or 16 in the EEA). We do not knowingly collect personal data from minors. If you believe a minor has created an account, please contact us for prompt deletion.',
+                      ),
+                      const SizedBox(height: 14),
+                      _PolicySection(
+                        icon: Icons.security_rounded,
+                        title: '12. Security',
+                        content:
+                            'We protect your data using AES-256-GCM encryption, bcrypt hashing, JWT tokens, HTTPS, and rate limiting. However, no system is perfectly secure and we cannot guarantee absolute security.',
                       ),
                       const SizedBox(height: 14),
                       _PolicySection(
                         icon: Icons.edit_note_rounded,
-                        title: '8. Changes to This Policy',
+                        title: '13. Changes to This Policy',
                         content:
-                            'If we make material changes to this policy, existing users will be prompted to review and accept the updated version before using the app again.',
+                            'We may update this Privacy Policy from time to time. For significant changes, we will notify users via email or an in-app notice.',
+                      ),
+                      const SizedBox(height: 14),
+                      _PolicySection(
+                        icon: Icons.mail_outline_rounded,
+                        title: '14. Contact Us',
+                        content:
+                            'If you have questions about this Privacy Policy or how we handle your data, please contact us at hisaab.app@gmail.com with the subject "Privacy Inquiry". We will respond within 14 business days.',
                       ),
                       const SizedBox(height: 28),
                     ],
