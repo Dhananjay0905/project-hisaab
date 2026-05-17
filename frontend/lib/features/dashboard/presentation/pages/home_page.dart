@@ -742,5 +742,3 @@ class _LoadingState extends StatelessWidget {
     );
   }
 }
-
-}

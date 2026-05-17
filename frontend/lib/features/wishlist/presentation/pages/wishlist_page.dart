@@ -60,7 +60,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
               error: (e, _) => SliverFillRemaining(
                 child: ErrorView(
                   message: e.toString().replaceAll('Exception:', '').trim(),
-                  onRetry: () => ref.read(wishlistProvider.notifier).refresh(),
+                  onRetry: () => ref.invalidate(wishlistProvider),
                 ),
               ),
               data: (items) {
