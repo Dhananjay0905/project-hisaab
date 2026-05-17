@@ -556,6 +556,7 @@ function _formatUser(user) {
     openingBalance: parseFloat(user.openingBalance ?? 0),
     monthlyBudget: user.monthlyBudget != null ? parseFloat(user.monthlyBudget) : null,
     createdAt: user.createdAt,
+    policyAcceptedAt: user.policyAcceptedAt,
   };
 }
 

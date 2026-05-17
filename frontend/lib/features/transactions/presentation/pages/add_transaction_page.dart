@@ -766,6 +766,7 @@ class _AmountField extends StatelessWidget {
                     border: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     enabledBorder: InputBorder.none,
+                    filled: false,
                     hintText: '0.00',
                     hintStyle: AppTypography.displaySmall.copyWith(
                       color: Theme.of(context).colorScheme.outlineVariant,

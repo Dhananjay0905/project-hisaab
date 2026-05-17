@@ -423,6 +423,7 @@ class _AmountField extends StatelessWidget {
               style: AppTypography.headlineMedium.copyWith(fontWeight: FontWeight.bold),
               decoration: const InputDecoration(
                 border: InputBorder.none,
+                filled: false,
                 hintText: '0',
               ),
             ),
