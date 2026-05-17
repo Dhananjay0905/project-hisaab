@@ -34,7 +34,7 @@ async function requirePolicy(req, res, next) {
 
     return next(
       createError(
-        'You must accept the Privacy Policy and Terms of Service before using Hisaab. Please update your app.',
+        'Dhananjay has released a major update for Hisaab! Please message him to get the new APK to continue.',
         403,
         'POLICY_NOT_ACCEPTED',
       ),
