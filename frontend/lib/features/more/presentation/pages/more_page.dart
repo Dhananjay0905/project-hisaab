@@ -116,6 +116,27 @@ class MorePage extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
+                _SectionHeader(label: 'Legal'),
+                const SizedBox(height: AppSpacing.xs),
+                _MenuCard(
+                  items: [
+                    _MenuItem(
+                      icon: Icons.shield_outlined,
+                      iconColor: Theme.of(context).colorScheme.primary,
+                      label: 'Privacy Policy',
+                      subtitle: 'How we protect your data',
+                      onTap: () => context.push('/privacy-policy'),
+                    ),
+                    _MenuItem(
+                      icon: Icons.gavel_rounded,
+                      iconColor: Theme.of(context).colorScheme.primary,
+                      label: 'Terms of Service',
+                      subtitle: 'Rules and guidelines',
+                      onTap: () => context.push('/terms-of-service'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
                 _SectionHeader(label: 'Account'),
                 const SizedBox(height: AppSpacing.xs),
                 _MenuCard(
