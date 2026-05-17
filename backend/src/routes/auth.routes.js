@@ -7,6 +7,7 @@ const { Router } = require('express');
 const ctrl = require('../controllers/auth.controller');
 const { requireAuth } = require('../middleware/authMiddleware');
 const { authLimiter } = require('../middleware/rateLimiter');
+const { checkBruteForce } = require('../middleware/bruteForce');
 
 const router = Router();
 
@@ -22,13 +23,14 @@ router.get('/verify-email', ctrl.verifyEmail);
 router.post('/resend-verification', authLimiter, ctrl.resendVerificationValidation, ctrl.resendVerification);
 
 // POST /api/auth/login
-router.post('/login', authLimiter, ctrl.loginValidation, ctrl.login);
+// Order: IP rate-limit → exponential backoff check → input validation → handler
+router.post('/login', authLimiter, checkBruteForce, ctrl.loginValidation, ctrl.login);
 
 // POST /api/auth/refresh   { refreshToken }
-router.post('/refresh', ctrl.refresh);
+router.post('/refresh', authLimiter, ctrl.refresh);
 
 // POST /api/auth/logout    { refreshToken }
-router.post('/logout', ctrl.logout);
+router.post('/logout', authLimiter, ctrl.logout);
 
 // POST /api/auth/forgot-password   { email }
 router.post('/forgot-password', authLimiter, ctrl.forgotPasswordValidation, ctrl.forgotPassword);
@@ -57,5 +59,12 @@ router.post('/request-email-change', requireAuth, ctrl.requestEmailChangeValidat
 
 // POST /api/auth/change-password   { currentPassword, newPassword }
 router.post('/change-password', requireAuth, ctrl.changePasswordValidation, ctrl.changePassword);
+
+// DELETE /api/auth/delete-account   { password }
+router.delete('/delete-account', requireAuth, ctrl.deleteAccountValidation, ctrl.deleteAccount);
+
+// POST /api/auth/accept-policy
+// requireAuth only — no requirePolicy (that would be a catch-22 for users who haven't accepted yet)
+router.post('/accept-policy', requireAuth, ctrl.acceptPolicy);
 
 module.exports = router;

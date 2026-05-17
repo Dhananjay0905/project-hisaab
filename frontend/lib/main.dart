@@ -13,14 +13,9 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Transparent status bar + light icons
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-    ),
-  );
+  // Status bar style is now handled by AppTheme (light/dark)
+  // via appBarTheme.systemOverlayStyle.
+
 
   runApp(
     const ProviderScope(

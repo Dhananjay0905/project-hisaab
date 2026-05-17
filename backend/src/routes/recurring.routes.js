@@ -6,11 +6,9 @@
 
 const { Router } = require('express');
 const { body } = require('express-validator');
-const { requireAuth } = require('../middleware/authMiddleware');
 const recurringController = require('../controllers/recurring.controller');
 
 const router = Router();
-router.use(requireAuth);
 
 // ─── Validators ───────────────────────────────────────────────────────────────
 

@@ -4,7 +4,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
 
@@ -93,7 +92,7 @@ class _AppTextFieldState extends State<AppTextField> {
       readOnly: widget.readOnly,
       onTap: widget.onTap,
       textCapitalization: widget.textCapitalization,
-      style: AppTypography.inputText.copyWith(color: AppColors.onSurface),
+      style: AppTypography.inputText.copyWith(color: Theme.of(context).colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
@@ -125,7 +124,7 @@ class _ToggleVisibilityButton extends StatelessWidget {
     return IconButton(
       icon: Icon(
         visible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-        color: AppColors.onSurfaceVariant,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
         size: 20,
       ),
       onPressed: onToggle,
@@ -154,14 +153,14 @@ class AppSearchField extends StatelessWidget {
     return TextField(
       controller: controller,
       onChanged: onChanged,
-      style: AppTypography.bodyMedium.copyWith(color: AppColors.onSurface),
+      style: AppTypography.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: const Icon(Icons.search_rounded, color: AppColors.onSurfaceVariant, size: 20),
+        prefixIcon: Icon(Icons.search_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
         suffixIcon: controller?.text.isNotEmpty == true
             ? IconButton(
                 icon: const Icon(Icons.close_rounded, size: 18),
-                color: AppColors.onSurfaceVariant,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 onPressed: () {
                   controller?.clear();
                   onClear?.call();
@@ -173,7 +172,7 @@ class AppSearchField extends StatelessWidget {
           vertical: AppSpacing.sm,
         ),
         filled: true,
-        fillColor: AppColors.surfaceContainerLow,
+        fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.xl4),
           borderSide: BorderSide.none,
@@ -184,7 +183,7 @@ class AppSearchField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.xl4),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
         ),
       ),
     );

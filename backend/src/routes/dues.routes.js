@@ -6,11 +6,9 @@
 
 const { Router } = require('express');
 const { body } = require('express-validator');
-const { requireAuth } = require('../middleware/authMiddleware');
 const duesController = require('../controllers/dues.controller');
 
 const router = Router();
-router.use(requireAuth);
 
 // ─── Validators ───────────────────────────────────────────────────────────────
 

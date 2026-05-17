@@ -9,7 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
@@ -164,7 +163,7 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -300,7 +299,7 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
                         children: [
                           Icon(Icons.calendar_today_rounded,
                               size: 20,
-                              color: AppColors.primary),
+                              color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 10),
                           Text(
                             DateFormat('MMM d, yyyy').format(_selectedDate),
@@ -317,19 +316,19 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.1),
+                        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline_rounded,
-                              color: AppColors.error, size: 18),
+                          Icon(Icons.error_outline_rounded,
+                              color: Theme.of(context).colorScheme.error, size: 18),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _errorMessage!,
                               style: AppTypography.bodySmall
-                                  .copyWith(color: AppColors.error),
+                                  .copyWith(color: Theme.of(context).colorScheme.error),
                             ),
                           ),
                         ],
@@ -345,7 +344,7 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
                     child: FilledButton(
                       onPressed: _isSubmitting ? null : _submit,
                       style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -411,7 +410,7 @@ class _AmountField extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('₹', style: AppTypography.headlineMedium.copyWith(color: AppColors.primary)),
+            child: Text('₹', style: AppTypography.headlineMedium.copyWith(color: Theme.of(context).colorScheme.primary)),
           ),
           Expanded(
             child: TextField(
@@ -536,7 +535,7 @@ class _CounterButton extends StatelessWidget {
         height: 36,
         decoration: BoxDecoration(
           color: enabled
-              ? AppColors.primary.withValues(alpha: 0.12)
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
               : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(10),
         ),
@@ -544,7 +543,7 @@ class _CounterButton extends StatelessWidget {
           icon,
           size: 18,
           color: enabled
-              ? AppColors.primary
+              ? Theme.of(context).colorScheme.primary
               : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
         ),
       ),
@@ -613,12 +612,12 @@ class _SplitCategoryPickerState extends ConsumerState<_SplitCategoryPicker> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.cashOut
+                    ? SemanticColors.of(context).cashOut
                     : Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected
-                      ? AppColors.cashOut
+                      ? SemanticColors.of(context).cashOut
                       : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
                 ),
               ),

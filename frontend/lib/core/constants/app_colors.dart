@@ -112,3 +112,111 @@ abstract final class AppColors {
         ),
       ];
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Dark Mode Tokens
+// ═══════════════════════════════════════════════════════════════════════════════
+
+abstract final class AppColorsDark {
+  // ─── Primary ─────────────────────────────────────────────────────────────
+  static const Color primary = Color(0xFF7B93E8);        // muted periwinkle — easy on dark bg
+  static const Color onPrimary = Color(0xFF0D1A4A);      // deep navy text on primary
+  static const Color primaryContainer = Color(0xFF1E3270); // deep navy container
+  static const Color onPrimaryContainer = Color(0xFFCDD8FF); // pale lavender on container
+
+  // ─── Secondary (Green) ───────────────────────────────────────────────────
+  static const Color secondary = Color(0xFF7ADB8E);
+  static const Color onSecondary = Color(0xFF003913);
+  static const Color secondaryContainer = Color(0xFF005D22);
+  static const Color onSecondaryContainer = Color(0xFFCFFFCE);
+
+  // ─── Tertiary (Amber) ────────────────────────────────────────────────────
+  static const Color tertiary = Color(0xFFFFBE44);
+  static const Color onTertiary = Color(0xFF3D2600);
+  static const Color tertiaryContainer = Color(0xFF5D3F00);
+  static const Color onTertiaryContainer = Color(0xFFFFE0A0);
+
+  // ─── Error (Red) ─────────────────────────────────────────────────────────
+  static const Color error = Color(0xFFFF8A9C);
+  static const Color onError = Color(0xFF510017);
+  static const Color errorContainer = Color(0xFF8C0A2E);
+  static const Color onErrorContainer = Color(0xFFFFDADF);
+
+  // ─── Surface & Background ────────────────────────────────────────────────
+  static const Color surface = Color(0xFF121417);
+  static const Color onSurface = Color(0xFFE4E6EB);
+  static const Color surfaceVariant = Color(0xFF3A3D42);
+  static const Color onSurfaceVariant = Color(0xFFA0A3A8);
+
+  static const Color surfaceContainerLowest = Color(0xFF1A1D21);
+  static const Color surfaceContainerLow = Color(0xFF1F2228);
+  static const Color surfaceContainer = Color(0xFF262A30);
+  static const Color surfaceContainerHigh = Color(0xFF2D3138);
+  static const Color surfaceContainerHighest = Color(0xFF353940);
+
+  // ─── Outline ─────────────────────────────────────────────────────────────
+  static const Color outline = Color(0xFF6E7075);
+  static const Color outlineVariant = Color(0xFF454850);
+
+  // ─── Semantic aliases ────────────────────────────────────────────────────
+  static const Color cashIn = Color(0xFF7ADB8E);
+  static const Color cashInContainer = Color(0xFF1B3D24);
+  static const Color cashInSurface = Color(0xFF132A1A);
+
+  static const Color cashOut = Color(0xFFE87B8F);  // softened rose — less neon than #FF8A9C
+  static const Color cashOutContainer = Color(0xFF3D1520);
+  static const Color cashOutSurface = Color(0xFF2A0F16);
+
+  static const Color pending = Color(0xFFFFBE44);
+  static const Color pendingContainer = Color(0xFF3D2600);
+  static const Color pendingSurface = Color(0xFF2A1A00);
+
+  // ─── Gradients ──────────────────────────────────────────────────────────
+  static const Gradient primaryGradient = LinearGradient(
+    colors: [Color(0xFF3A5CC5), Color(0xFF6B85D8)],   // deep royal → soft periwinkle
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const Gradient heroCardGradient = LinearGradient(
+    colors: [Color(0xFF1A2E6E), Color(0xFF2E4BAD), Color(0xFF6B85D8)], // deep navy → muted periwinkle
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    stops: [0.0, 0.5, 1.0],
+  );
+
+  static const Gradient backgroundGradient = RadialGradient(
+    center: Alignment(0.0, -0.6),
+    radius: 1.2,
+    colors: [Color(0xFF1A2040), Color(0xFF121417)],
+  );
+
+  static const Gradient cashInGradient = LinearGradient(
+    colors: [Color(0xFF005D22), Color(0xFF7ADB8E)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const Gradient cashOutGradient = LinearGradient(
+    colors: [Color(0xFF8C0A2E), Color(0xFFFF8A9C)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // ─── Shadows ─────────────────────────────────────────────────────────────
+  static List<BoxShadow> get cardShadow => [
+        BoxShadow(
+          color: const Color(0xFF000000).withValues(alpha: 0.30),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+        ),
+      ];
+
+  static List<BoxShadow> get softShadow => [
+        BoxShadow(
+          color: const Color(0xFF000000).withValues(alpha: 0.20),
+          blurRadius: 12,
+          offset: const Offset(0, 2),
+        ),
+      ];
+}

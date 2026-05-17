@@ -13,7 +13,6 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
 
@@ -97,7 +96,7 @@ class _UndoSnackBarContentState extends State<_UndoSnackBarContent>
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.onSurface,
+        color: Theme.of(context).colorScheme.inverseSurface,
         borderRadius: BorderRadius.circular(AppSpacing.md),
       ),
       child: Column(
@@ -114,7 +113,7 @@ class _UndoSnackBarContentState extends State<_UndoSnackBarContent>
                 value: 1 - _timer.value,
                 minHeight: 3,
                 backgroundColor: Colors.white10,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
               ),
             ),
           ),
@@ -129,7 +128,7 @@ class _UndoSnackBarContentState extends State<_UndoSnackBarContent>
                   child: Text(
                     widget.message,
                     style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.surface,
+                      color: Theme.of(context).colorScheme.onInverseSurface,
                     ),
                   ),
                 ),
@@ -137,7 +136,7 @@ class _UndoSnackBarContentState extends State<_UndoSnackBarContent>
                 TextButton(
                   onPressed: widget.onUndo,
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryContainer,
+                    foregroundColor: Theme.of(context).colorScheme.inversePrimary,
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md,
                       vertical: AppSpacing.xs,
@@ -148,7 +147,7 @@ class _UndoSnackBarContentState extends State<_UndoSnackBarContent>
                   child: Text(
                     'UNDO',
                     style: AppTypography.labelMedium.copyWith(
-                      color: AppColors.primaryContainer,
+                      color: Theme.of(context).colorScheme.inversePrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

@@ -1,4 +1,4 @@
-package com.example.expensio
+package app.hisaab.hisaab
 
 import io.flutter.embedding.android.FlutterActivity
 

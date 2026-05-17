@@ -11,6 +11,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../providers/auth_provider.dart';
+import '../../../../../../../../../../core/theme/semantic_colors.dart';
 
 class VerifyEmailPage extends ConsumerStatefulWidget {
   const VerifyEmailPage({super.key, required this.email});
@@ -43,7 +44,7 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to resend. Please try again.')),
+          SnackBar(content: Text('Failed to resend. Please try again.')),
         );
       }
     } finally {
@@ -64,7 +65,7 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.backgroundGradient : AppColors.backgroundGradient),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.screenH),
@@ -76,13 +77,13 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
                   width: 96,
                   height: 96,
                   decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
+                    gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(AppRadius.xl),
-                    boxShadow: AppColors.cardShadow,
+                    boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.cardShadow : AppColors.cardShadow,
                   ),
                   child: const Icon(
                     Icons.mark_email_unread_rounded,
-                    color: AppColors.onPrimary,
+                    color: Colors.white,
                     size: 48,
                   ),
                 ),
@@ -91,7 +92,7 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
                 Text(
                   'Check your inbox',
                   style: AppTypography.headlineSmall.copyWith(
-                    color: AppColors.onSurface,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                   textAlign: TextAlign.center,
@@ -102,7 +103,7 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
                   textAlign: TextAlign.center,
                   text: TextSpan(
                     style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       height: 1.6,
                     ),
                     children: [
@@ -111,7 +112,7 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
                       TextSpan(
                         text: widget.email,
                         style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -127,21 +128,21 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
                     margin: const EdgeInsets.only(bottom: AppSpacing.xl),
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.cashInSurface,
+                      color: SemanticColors.of(context).cashInSurface,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                       border: Border.all(
-                          color: AppColors.cashIn.withValues(alpha: 0.4)),
+                          color: SemanticColors.of(context).cashIn.withValues(alpha: 0.4)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle_outline_rounded,
-                            color: AppColors.cashIn, size: 18),
+                        Icon(Icons.check_circle_outline_rounded,
+                            color: SemanticColors.of(context).cashIn, size: 18),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
                             'Verification email resent successfully.',
                             style: AppTypography.bodySmall
-                                .copyWith(color: AppColors.cashIn),
+                                .copyWith(color: SemanticColors.of(context).cashIn),
                           ),
                         ),
                       ],
@@ -173,7 +174,7 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
                   child: Text(
                     '← Back to sign in',
                     style: AppTypography.labelMedium.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),

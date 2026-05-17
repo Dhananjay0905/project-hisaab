@@ -70,6 +70,48 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
     ),
   );
 
+  // ─── Normal Dark (green / red on dark surfaces) ───────────────────────────
+
+  static const SemanticColors normalDark = SemanticColors(
+    cashIn: AppColorsDark.cashIn,            // muted green — readable on dark surfaces
+    cashInContainer: Color(0xFF1B3D24),
+    cashInSurface: Color(0xFF132A1A),
+    cashOut: Color(0xFFE87B8F),              // softened rose — less neon than #FF8A9C
+    cashOutContainer: Color(0xFF3D1520),
+    cashOutSurface: Color(0xFF2A0F16),
+    cashInGradient: LinearGradient(
+      colors: [Color(0xFF1B3D24), Color(0xFF7ADB8E)],   // dark green → muted leaf
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+    cashOutGradient: LinearGradient(
+      colors: [Color(0xFF5C1A28), Color(0xFFE87B8F)],   // deep rose → muted pink
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+  );
+
+  // ─── Colorblind Dark (blue / orange on dark surfaces) ─────────────────────
+
+  static const SemanticColors colorblindDark = SemanticColors(
+    cashIn: Color(0xFF6EA8FF),
+    cashInContainer: Color(0xFF0D3A6E),
+    cashInSurface: Color(0xFF0A2850),
+    cashOut: Color(0xFFFFAA66),
+    cashOutContainer: Color(0xFF5C3000),
+    cashOutSurface: Color(0xFF3D2000),
+    cashInGradient: LinearGradient(
+      colors: [Color(0xFF0057B8), Color(0xFF6EA8FF)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+    cashOutGradient: LinearGradient(
+      colors: [Color(0xFFCC5500), Color(0xFFFFAA66)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+  );
+
   // ─── Accessor ─────────────────────────────────────────────────────────────
 
   /// Fetch the current [SemanticColors] from the nearest [Theme].

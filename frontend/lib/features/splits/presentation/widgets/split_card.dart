@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
@@ -106,7 +105,7 @@ class _SplitCardState extends ConsumerState<SplitCard>
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -363,7 +362,7 @@ class _SplitCardState extends ConsumerState<SplitCard>
                       backgroundColor:
                           Theme.of(context).colorScheme.surfaceContainerHighest,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        isFullyPaid ? SemanticColors.of(context).cashIn : AppColors.primary,
+                        isFullyPaid ? SemanticColors.of(context).cashIn : Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ),
@@ -396,23 +395,23 @@ class _SplitCardState extends ConsumerState<SplitCard>
                     children: [
                       TextButton.icon(
                         onPressed: () => _showEditSheet(context),
-                        icon: const Icon(Icons.edit_outlined,
-                            size: 16, color: AppColors.primary),
+                        icon: Icon(Icons.edit_outlined,
+                            size: 16, color: Theme.of(context).colorScheme.primary),
                         label: Text(
                           'Edit',
                           style: AppTypography.bodySmall
-                              .copyWith(color: AppColors.primary),
+                              .copyWith(color: Theme.of(context).colorScheme.primary),
                         ),
                       ),
                       const Spacer(),
                       TextButton.icon(
                         onPressed: _confirmDelete,
-                        icon: const Icon(Icons.delete_outline_rounded,
-                            size: 16, color: AppColors.error),
+                        icon: Icon(Icons.delete_outline_rounded,
+                            size: 16, color: Theme.of(context).colorScheme.error),
                         label: Text(
                           'Delete',
                           style: AppTypography.bodySmall
-                              .copyWith(color: AppColors.error),
+                              .copyWith(color: Theme.of(context).colorScheme.error),
                         ),
                       ),
                     ],
@@ -742,12 +741,12 @@ class _EditSheetCategoryPickerState
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.cashOut
+                    ? SemanticColors.of(context).cashOut
                     : Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected
-                      ? AppColors.cashOut
+                      ? SemanticColors.of(context).cashOut
                       : Theme.of(context)
                           .colorScheme
                           .outlineVariant

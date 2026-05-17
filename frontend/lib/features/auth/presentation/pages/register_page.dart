@@ -18,6 +18,7 @@ import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../providers/auth_provider.dart';
+import '../../../../../../../../../../core/theme/semantic_colors.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -39,6 +40,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   String? _errorMessage;
   int _passwordStrength = 0; // 0=empty 1=weak 2=fair 3=strong
+  bool _policyAccepted = false;
 
   void _onPasswordChanged(String value) {
     int strength = 0;
@@ -66,6 +68,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   }
 
   Future<void> _submit() async {
+    if (!_policyAccepted) {
+      setState(() => _errorMessage = 'You must accept the Privacy Policy and Terms of Service to continue.');
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     setState(() => _errorMessage = null);
 
@@ -108,7 +114,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.backgroundGradient : AppColors.backgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -125,14 +131,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLowest,
+                          color: Theme.of(context).colorScheme.surfaceContainerLowest,
                           borderRadius: BorderRadius.circular(AppRadius.md),
-                          boxShadow: AppColors.softShadow,
+                          boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.softShadow : AppColors.softShadow,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back_rounded,
                           size: 20,
-                          color: AppColors.onSurface,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -144,7 +150,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           Text(
                             'Create account',
                             style: AppTypography.headlineSmall.copyWith(
-                              color: AppColors.onSurface,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -152,7 +158,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           Text(
                             'Start tracking your finances today',
                             style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.onSurfaceVariant,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -271,14 +277,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             Text(
                               'Opening balance',
                               style: AppTypography.labelMedium.copyWith(
-                                color: AppColors.onSurfaceVariant,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Your current wallet/bank balance. Leave 0 if starting fresh.',
                               style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.onSurfaceVariant,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontSize: 11,
                               ),
                             ),
@@ -301,7 +307,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                   child: Text(
                                     '₹',
                                     style: AppTypography.titleMedium.copyWith(
-                                        color: AppColors.onSurfaceVariant),
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant),
                                   ),
                                 ),
                               ),
@@ -310,6 +316,87 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                     RegExp(r'^\d*\.?\d{0,2}')),
                               ],
                               validator: Validators.optionalAmount,
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // ── SECTION 4: Legal ──────────────────────────
+                        _SectionCard(
+                          title: 'Legal',
+                          icon: Icons.gavel_rounded,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                setState(() => _policyAccepted = !_policyAccepted);
+                              },
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: Checkbox(
+                                      value: _policyAccepted,
+                                      onChanged: (v) => setState(() => _policyAccepted = v ?? false),
+                                      activeColor: Theme.of(context).colorScheme.primary,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: RichText(
+                                        text: TextSpan(
+                                          style: AppTypography.bodySmall.copyWith(
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          ),
+                                          children: [
+                                            const TextSpan(text: 'I have read and agree to the '),
+                                            WidgetSpan(
+                                              alignment: PlaceholderAlignment.baseline,
+                                              baseline: TextBaseline.alphabetic,
+                                              child: GestureDetector(
+                                                onTap: () => context.push('/privacy-policy'),
+                                                child: Text(
+                                                  'Privacy Policy',
+                                                  style: AppTypography.bodySmall.copyWith(
+                                                    color: Theme.of(context).colorScheme.primary,
+                                                    fontWeight: FontWeight.w600,
+                                                    decoration: TextDecoration.underline,
+                                                    decorationColor: Theme.of(context).colorScheme.primary,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const TextSpan(text: ' and '),
+                                            WidgetSpan(
+                                              alignment: PlaceholderAlignment.baseline,
+                                              baseline: TextBaseline.alphabetic,
+                                              child: GestureDetector(
+                                                onTap: () => context.push('/terms-of-service'),
+                                                child: Text(
+                                                  'Terms of Service',
+                                                  style: AppTypography.bodySmall.copyWith(
+                                                    color: Theme.of(context).colorScheme.primary,
+                                                    fontWeight: FontWeight.w600,
+                                                    decoration: TextDecoration.underline,
+                                                    decorationColor: Theme.of(context).colorScheme.primary,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -339,7 +426,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             child: RichText(
                               text: TextSpan(
                                 style: AppTypography.bodyMedium.copyWith(
-                                  color: AppColors.onSurfaceVariant,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                                 children: [
                                   const TextSpan(
@@ -347,7 +434,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                   TextSpan(
                                     text: 'Sign in →',
                                     style: AppTypography.bodyMedium.copyWith(
-                                      color: AppColors.primary,
+                                      color: Theme.of(context).colorScheme.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -401,7 +488,7 @@ class _PasswordStrengthBar extends StatelessWidget {
                 height: 4,
                 margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
                 decoration: BoxDecoration(
-                  color: filled ? color : AppColors.surfaceContainerHigh,
+                  color: filled ? color : Theme.of(context).colorScheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -432,7 +519,7 @@ class _PasswordRulesHint extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -441,7 +528,7 @@ class _PasswordRulesHint extends StatelessWidget {
           Text(
             'Password requirements:',
             style: AppTypography.labelSmall.copyWith(
-              color: AppColors.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -474,8 +561,8 @@ class _RuleRow extends StatelessWidget {
             isOptional ? Icons.add_circle_outline_rounded : Icons.circle,
             size: isOptional ? 12 : 6,
             color: isOptional
-                ? AppColors.onSurfaceVariant.withValues(alpha: 0.5)
-                : AppColors.onSurfaceVariant.withValues(alpha: 0.4),
+                ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+                : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
           ),
           const SizedBox(width: 6),
           Expanded(
@@ -483,8 +570,8 @@ class _RuleRow extends StatelessWidget {
               text,
               style: AppTypography.labelSmall.copyWith(
                 color: isOptional
-                    ? AppColors.onSurfaceVariant.withValues(alpha: 0.5)
-                    : AppColors.onSurfaceVariant,
+                    ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -514,9 +601,9 @@ class _SectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        boxShadow: AppColors.softShadow,
+        boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.softShadow : AppColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -527,16 +614,16 @@ class _SectionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.08),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                child: Icon(icon, size: 16, color: AppColors.primary),
+                child: Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(width: 10),
               Text(
                 title,
                 style: AppTypography.titleSmall.copyWith(
-                  color: AppColors.onSurface,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -560,20 +647,20 @@ class _ErrorBanner extends StatelessWidget {
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
-          color: AppColors.cashOutSurface,
+          color: SemanticColors.of(context).cashOutSurface,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.cashOut.withValues(alpha: 0.3)),
+          border: Border.all(color: SemanticColors.of(context).cashOut.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.error_outline_rounded,
-                color: AppColors.cashOut, size: 18),
+            Icon(Icons.error_outline_rounded,
+                color: SemanticColors.of(context).cashOut, size: 18),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 message,
                 style:
-                    AppTypography.bodySmall.copyWith(color: AppColors.cashOut),
+                    AppTypography.bodySmall.copyWith(color: SemanticColors.of(context).cashOut),
               ),
             ),
           ],

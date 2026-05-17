@@ -12,6 +12,7 @@ import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../providers/auth_provider.dart';
+import '../../../../../../../../../../core/theme/semantic_colors.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -57,7 +58,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.backgroundGradient : AppColors.backgroundGradient),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.screenH),
@@ -74,18 +75,18 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
+                    gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                   ),
                   child: const Icon(Icons.lock_reset_rounded,
-                      color: AppColors.onPrimary, size: 32),
+                      color: Colors.white, size: 32),
                 ),
                 const SizedBox(height: AppSpacing.xl),
 
                 Text(
                   'Reset password',
                   style: AppTypography.headlineSmall.copyWith(
-                    color: AppColors.onSurface,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -93,7 +94,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                 Text(
                   "Enter your account email and we'll send you a reset link.",
                   style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.onSurfaceVariant,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     height: 1.5,
                   ),
                 ),
@@ -156,26 +157,26 @@ class _SuccessBanner extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: AppColors.cashInSurface,
+          color: SemanticColors.of(context).cashInSurface,
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.cashIn.withValues(alpha: 0.4)),
+          border: Border.all(color: SemanticColors.of(context).cashIn.withValues(alpha: 0.4)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.check_circle_rounded,
-                color: AppColors.cashIn, size: 28),
+            Icon(Icons.check_circle_rounded,
+                color: SemanticColors.of(context).cashIn, size: 28),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Reset link sent!',
-              style: AppTypography.titleSmall.copyWith(color: AppColors.cashIn),
+              style: AppTypography.titleSmall.copyWith(color: SemanticColors.of(context).cashIn),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Check your inbox at $email for a password reset link. '
               "It expires in 1 hour.",
               style: AppTypography.bodySmall.copyWith(
-                color: AppColors.onSurfaceVariant,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 height: 1.5,
               ),
             ),
@@ -193,20 +194,20 @@ class _ErrorBanner extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: AppColors.cashOutSurface,
+          color: SemanticColors.of(context).cashOutSurface,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.cashOut.withValues(alpha: 0.3)),
+          border: Border.all(color: SemanticColors.of(context).cashOut.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.error_outline_rounded,
-                color: AppColors.cashOut, size: 18),
+            Icon(Icons.error_outline_rounded,
+                color: SemanticColors.of(context).cashOut, size: 18),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 message,
                 style:
-                    AppTypography.bodySmall.copyWith(color: AppColors.cashOut),
+                    AppTypography.bodySmall.copyWith(color: SemanticColors.of(context).cashOut),
               ),
             ),
           ],

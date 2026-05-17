@@ -14,6 +14,8 @@ abstract final class ApiEndpoints {
   static const String updateProfile = '/auth/profile';
   static const String requestEmailChange = '/auth/request-email-change';
   static const String changePassword = '/auth/change-password';
+  static const String deleteAccount  = '/auth/delete-account';
+  static const String acceptPolicy   = '/auth/accept-policy';
 
   // ─── Current user ─────────────────────────────────────────────────────────
   static const String me = '/auth/me';

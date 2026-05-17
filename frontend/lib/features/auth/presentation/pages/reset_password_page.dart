@@ -12,6 +12,7 @@ import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../providers/auth_provider.dart';
+import '../../../../../../../../../../core/theme/semantic_colors.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
   const ResetPasswordPage({super.key, required this.token});
@@ -65,7 +66,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.backgroundGradient : AppColors.backgroundGradient),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.screenH),
@@ -77,18 +78,18 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
+                    gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                   ),
                   child: const Icon(Icons.key_rounded,
-                      color: AppColors.onPrimary, size: 32),
+                      color: Colors.white, size: 32),
                 ),
                 const SizedBox(height: AppSpacing.xl),
 
                 Text(
                   'Set new password',
                   style: AppTypography.headlineSmall.copyWith(
-                    color: AppColors.onSurface,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -96,7 +97,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 Text(
                   'Choose a strong password for your account.',
                   style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.onSurfaceVariant,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl3),
@@ -105,27 +106,27 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
-                      color: AppColors.cashInSurface,
+                      color: SemanticColors.of(context).cashInSurface,
                       borderRadius: BorderRadius.circular(AppRadius.lg),
-                      border: Border.all(color: AppColors.cashIn.withValues(alpha: 0.4)),
+                      border: Border.all(color: SemanticColors.of(context).cashIn.withValues(alpha: 0.4)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.check_circle_rounded,
-                            color: AppColors.cashIn, size: 28),
+                        Icon(Icons.check_circle_rounded,
+                            color: SemanticColors.of(context).cashIn, size: 28),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
                           'Password updated!',
                           style: AppTypography.titleSmall
-                              .copyWith(color: AppColors.cashIn),
+                              .copyWith(color: SemanticColors.of(context).cashIn),
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           'Your password has been reset. '
                           'You can now sign in with your new password.',
                           style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                             height: 1.5,
                           ),
                         ),
@@ -171,13 +172,13 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(AppSpacing.md),
                             decoration: BoxDecoration(
-                              color: AppColors.cashOutSurface,
+                              color: SemanticColors.of(context).cashOutSurface,
                               borderRadius: BorderRadius.circular(AppRadius.md),
                             ),
                             child: Text(
                               _error!,
                               style: AppTypography.bodySmall
-                                  .copyWith(color: AppColors.cashOut),
+                                  .copyWith(color: SemanticColors.of(context).cashOut),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),

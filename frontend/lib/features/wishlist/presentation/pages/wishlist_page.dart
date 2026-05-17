@@ -30,7 +30,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
     final wishlistAsync = ref.watch(wishlistProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         child: CustomScrollView(
@@ -38,7 +38,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
           slivers: [
             SliverAppBar(
               pinned: true,
-              backgroundColor: AppColors.surface,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -47,7 +47,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
               title: Text(
                 'Wishlist',
                 style: AppTypography.titleLarge.copyWith(
-                  color: AppColors.onSurface,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -60,7 +60,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
                 child: Center(
                     child: Text(
                   'Failed to load wishlist',
-                  style: AppTypography.bodySmall.copyWith(color: AppColors.error),
+                  style: AppTypography.bodySmall.copyWith(color: Theme.of(context).colorScheme.error),
                 )),
               ),
               data: (items) {
@@ -93,7 +93,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
                           child: Text(
                             'Purchased',
                             style: AppTypography.labelMedium.copyWith(
-                              color: AppColors.onSurfaceVariant,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -114,8 +114,8 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddSheet(context, ref),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Item'),
       ),
@@ -158,11 +158,13 @@ class _WishlistCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.md),
-        boxShadow: AppColors.softShadow,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? AppColorsDark.softShadow
+            : AppColors.softShadow,
         border: isPurchased
-            ? Border.all(color: AppColors.secondary.withValues(alpha: 0.3))
+            ? Border.all(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3))
             : null,
       ),
       child: Column(
@@ -178,7 +180,7 @@ class _WishlistCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainer,
+                    color: Theme.of(context).colorScheme.surfaceContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -195,8 +197,8 @@ class _WishlistCard extends StatelessWidget {
                         item.title,
                         style: AppTypography.titleSmall.copyWith(
                           color: isPurchased
-                              ? AppColors.onSurfaceVariant
-                              : AppColors.onSurface,
+                              ? Theme.of(context).colorScheme.onSurfaceVariant
+                              : Theme.of(context).colorScheme.onSurface,
                           decoration: isPurchased
                               ? TextDecoration.lineThrough
                               : null,
@@ -207,7 +209,7 @@ class _WishlistCard extends StatelessWidget {
                           Text(
                             '₹${item.amountSaved.toStringAsFixed(0)} saved',
                             style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.secondary,
+                              color: Theme.of(context).colorScheme.secondary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -215,7 +217,7 @@ class _WishlistCard extends StatelessWidget {
                             Text(
                               ' / ₹${item.targetPrice!.toStringAsFixed(0)}',
                               style: AppTypography.bodySmall.copyWith(
-                                  color: AppColors.onSurfaceVariant),
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant),
                             ),
                           ],
                         ],
@@ -225,8 +227,8 @@ class _WishlistCard extends StatelessWidget {
                 ),
                 // Action menu
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert_rounded,
-                      size: 20, color: AppColors.onSurfaceVariant),
+                  icon: Icon(Icons.more_vert_rounded,
+                      size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppSpacing.sm)),
                   onSelected: (val) =>
@@ -242,23 +244,23 @@ class _WishlistCard extends StatelessWidget {
                         ]),
                       ),
                     if (!isPurchased)
-                      const PopupMenuItem(
+                    PopupMenuItem(
                         value: 'purchase',
                         child: Row(children: [
                           Icon(Icons.check_circle_rounded,
-                              size: 18, color: AppColors.secondary),
+                              size: 18, color: Theme.of(context).colorScheme.secondary),
                           SizedBox(width: 8),
                           Text('Mark Purchased'),
                         ]),
                       ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(children: [
                         Icon(Icons.delete_rounded,
-                            size: 18, color: AppColors.error),
+                            size: 18, color: Theme.of(context).colorScheme.error),
                         SizedBox(width: 8),
                         Text('Delete',
-                            style: TextStyle(color: AppColors.error)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       ]),
                     ),
                   ],
@@ -280,11 +282,11 @@ class _WishlistCard extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: 6,
-                      backgroundColor: AppColors.surfaceContainer,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         item.isComplete
-                            ? AppColors.secondary
-                            : AppColors.primary,
+                            ? Theme.of(context).colorScheme.secondary
+                            : Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ),
@@ -292,7 +294,7 @@ class _WishlistCard extends StatelessWidget {
                   Text(
                     '${(progress * 100).toStringAsFixed(0)}%',
                     style: AppTypography.labelSmall
-                        .copyWith(color: AppColors.onSurfaceVariant),
+                        .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -310,23 +312,23 @@ class _WishlistCard extends StatelessWidget {
                     // In a real app: launch URL
                     child: Row(
                       children: [
-                        const Icon(Icons.open_in_new_rounded,
-                            size: 14, color: AppColors.primary),
+                        Icon(Icons.open_in_new_rounded,
+                            size: 14, color: Theme.of(context).colorScheme.primary),
                         const SizedBox(width: 2),
                         Text('Link',
                             style: AppTypography.labelSmall
-                                .copyWith(color: AppColors.primary)),
+                                .copyWith(color: Theme.of(context).colorScheme.primary)),
                       ],
                     ),
                   ),
                 ],
                 if (isPurchased) ...[
-                  const Icon(Icons.check_circle_rounded,
-                      size: 16, color: AppColors.secondary),
+                  Icon(Icons.check_circle_rounded,
+                      size: 16, color: Theme.of(context).colorScheme.secondary),
                   const SizedBox(width: 4),
                   Text('Purchased',
                       style: AppTypography.labelSmall
-                          .copyWith(color: AppColors.secondary)),
+                          .copyWith(color: Theme.of(context).colorScheme.secondary)),
                 ],
               ],
             ),
@@ -434,7 +436,7 @@ class _WishlistItemSheetState extends State<_WishlistItemSheet> {
       padding: EdgeInsets.fromLTRB(
           AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.md + bottom),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.lg),
       ),
       child: SingleChildScrollView(
@@ -449,7 +451,7 @@ class _WishlistItemSheetState extends State<_WishlistItemSheet> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
+                  color: Theme.of(context).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -559,22 +561,22 @@ class _WishlistItemSheetState extends State<_WishlistItemSheet> {
               child: FilledButton(
                 onPressed: _loading ? null : _submit,
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding:
                       const EdgeInsets.symmetric(vertical: AppSpacing.sm + 4),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppSpacing.sm)),
                 ),
                 child: _loading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary),
                       )
                     : Text(isEdit ? 'Save Changes' : 'Add to Wishlist',
                         style: AppTypography.labelLarge
-                            .copyWith(color: Colors.white)),
+                            .copyWith(color: Theme.of(context).colorScheme.onPrimary)),
               ),
             ),
           ],
@@ -622,14 +624,14 @@ class _EmptyState extends StatelessWidget {
             Text(
               'Your wishlist is empty',
               style:
-                  AppTypography.titleMedium.copyWith(color: AppColors.onSurface),
+                  AppTypography.titleMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Add items you\'re saving up for and track your progress.',
               textAlign: TextAlign.center,
               style: AppTypography.bodySmall
-                  .copyWith(color: AppColors.onSurfaceVariant),
+                  .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: AppSpacing.xl),
             FilledButton.icon(

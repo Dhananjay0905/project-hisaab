@@ -7,13 +7,11 @@
 
 const { Router } = require('express');
 const { body } = require('express-validator');
-const { requireAuth } = require('../middleware/authMiddleware');
 const categoriesController = require('../controllers/categories.controller');
 
 const router = Router();
 
 // Apply auth to all category routes
-router.use(requireAuth);
 
 // ─── Validators ───────────────────────────────────────────────────────────────
 

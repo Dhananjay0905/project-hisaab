@@ -226,4 +226,228 @@ abstract final class AppTheme {
   static ThemeData lightWith(SemanticColors semanticColors) {
     return light.copyWith(extensions: <ThemeExtension<dynamic>>[semanticColors]);
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DARK THEME
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static ThemeData get dark {
+    final colorScheme = const ColorScheme(
+      brightness: Brightness.dark,
+      primary: AppColorsDark.primary,
+      onPrimary: AppColorsDark.onPrimary,
+      primaryContainer: AppColorsDark.primaryContainer,
+      onPrimaryContainer: AppColorsDark.onPrimaryContainer,
+      secondary: AppColorsDark.secondary,
+      onSecondary: AppColorsDark.onSecondary,
+      secondaryContainer: AppColorsDark.secondaryContainer,
+      onSecondaryContainer: AppColorsDark.onSecondaryContainer,
+      tertiary: AppColorsDark.tertiary,
+      onTertiary: AppColorsDark.onTertiary,
+      tertiaryContainer: AppColorsDark.tertiaryContainer,
+      onTertiaryContainer: AppColorsDark.onTertiaryContainer,
+      error: AppColorsDark.error,
+      onError: AppColorsDark.onError,
+      errorContainer: AppColorsDark.errorContainer,
+      onErrorContainer: AppColorsDark.onErrorContainer,
+      surface: AppColorsDark.surface,
+      onSurface: AppColorsDark.onSurface,
+      surfaceContainerHighest: AppColorsDark.surfaceVariant,
+      onSurfaceVariant: AppColorsDark.onSurfaceVariant,
+      outline: AppColorsDark.outline,
+      outlineVariant: AppColorsDark.outlineVariant,
+      shadow: Color(0xFF000000),
+      scrim: Color(0xFF000000),
+      inverseSurface: Color(0xFFE4E6EB),
+      onInverseSurface: Color(0xFF2C2F33),
+      inversePrimary: Color(0xFF3861FB),
+      surfaceContainerLowest: AppColorsDark.surfaceContainerLowest,
+      surfaceContainerLow: AppColorsDark.surfaceContainerLow,
+      surfaceContainer: AppColorsDark.surfaceContainer,
+      surfaceContainerHigh: AppColorsDark.surfaceContainerHigh,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: AppColorsDark.surface,
+
+      // ── Typography ─────────────────────────────────────────────────────────
+      textTheme: TextTheme(
+        displayLarge: AppTypography.displayLarge.copyWith(color: AppColorsDark.onSurface),
+        displayMedium: AppTypography.displayMedium.copyWith(color: AppColorsDark.onSurface),
+        displaySmall: AppTypography.displaySmall.copyWith(color: AppColorsDark.onSurface),
+        headlineLarge: AppTypography.headlineLarge.copyWith(color: AppColorsDark.onSurface),
+        headlineMedium: AppTypography.headlineMedium.copyWith(color: AppColorsDark.onSurface),
+        headlineSmall: AppTypography.headlineSmall.copyWith(color: AppColorsDark.onSurface),
+        titleLarge: AppTypography.titleLarge.copyWith(color: AppColorsDark.onSurface),
+        titleMedium: AppTypography.titleMedium.copyWith(color: AppColorsDark.onSurface),
+        titleSmall: AppTypography.titleSmall.copyWith(color: AppColorsDark.onSurface),
+        labelLarge: AppTypography.labelLarge.copyWith(color: AppColorsDark.onSurface),
+        labelMedium: AppTypography.labelMedium.copyWith(color: AppColorsDark.onSurfaceVariant),
+        labelSmall: AppTypography.labelSmall.copyWith(color: AppColorsDark.onSurfaceVariant),
+        bodyLarge: AppTypography.bodyLarge.copyWith(color: AppColorsDark.onSurface),
+        bodyMedium: AppTypography.bodyMedium.copyWith(color: AppColorsDark.onSurface),
+        bodySmall: AppTypography.bodySmall.copyWith(color: AppColorsDark.onSurfaceVariant),
+      ),
+
+      // ── AppBar ─────────────────────────────────────────────────────────────
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarBrightness: Brightness.dark,
+          statusBarIconBrightness: Brightness.light,
+          statusBarColor: Colors.transparent,
+        ),
+        titleTextStyle: AppTypography.titleLarge.copyWith(color: AppColorsDark.onSurface),
+        iconTheme: const IconThemeData(color: AppColorsDark.onSurface),
+        actionsIconTheme: const IconThemeData(color: AppColorsDark.onSurface),
+        centerTitle: false,
+      ),
+
+      // ── Cards ──────────────────────────────────────────────────────────────
+      cardTheme: CardThemeData(
+        color: AppColorsDark.surfaceContainerLowest,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+
+      // ── Input Decoration ───────────────────────────────────────────────────
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColorsDark.surfaceContainerLow,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderSide: const BorderSide(color: AppColorsDark.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderSide: const BorderSide(color: AppColorsDark.error, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderSide: const BorderSide(color: AppColorsDark.error, width: 1.5),
+        ),
+        hintStyle: AppTypography.bodyLarge.copyWith(color: AppColorsDark.onSurfaceVariant),
+        labelStyle: AppTypography.bodyMedium.copyWith(color: AppColorsDark.onSurfaceVariant),
+        floatingLabelStyle: AppTypography.labelMedium.copyWith(color: AppColorsDark.primary),
+        errorStyle: AppTypography.bodySmall.copyWith(color: AppColorsDark.error),
+      ),
+
+      // ── ElevatedButton ─────────────────────────────────────────────────────
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColorsDark.primary,
+          foregroundColor: AppColorsDark.onPrimary,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl2,
+            vertical: AppSpacing.lg,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          textStyle: AppTypography.labelLarge.copyWith(
+            color: AppColorsDark.onPrimary,
+            fontSize: 16,
+          ),
+          minimumSize: const Size(double.infinity, 54),
+        ),
+      ),
+
+      // ── OutlinedButton ─────────────────────────────────────────────────────
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColorsDark.primary,
+          side: const BorderSide(color: AppColorsDark.primaryContainer, width: 1.5),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl2,
+            vertical: AppSpacing.lg,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          textStyle: AppTypography.labelLarge.copyWith(color: AppColorsDark.primary),
+          minimumSize: const Size(double.infinity, 54),
+        ),
+      ),
+
+      // ── TextButton ─────────────────────────────────────────────────────────
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColorsDark.primary,
+          textStyle: AppTypography.labelLarge.copyWith(color: AppColorsDark.primary),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+        ),
+      ),
+
+      // ── Chip ───────────────────────────────────────────────────────────────
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColorsDark.surfaceContainerLow,
+        selectedColor: AppColorsDark.primaryContainer,
+        labelStyle: AppTypography.labelMedium,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.full),
+        ),
+        side: BorderSide.none,
+      ),
+
+      // ── Divider ────────────────────────────────────────────────────────────
+      dividerTheme: const DividerThemeData(
+        color: AppColorsDark.surfaceContainer,
+        thickness: 1,
+        space: 1,
+      ),
+
+      // ── SnackBar ───────────────────────────────────────────────────────────
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        backgroundColor: AppColorsDark.onSurface,
+        contentTextStyle: AppTypography.bodyMedium.copyWith(
+          color: AppColorsDark.surface,
+        ),
+      ),
+
+      // ── Bottom Sheet ───────────────────────────────────────────────────────
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColorsDark.surfaceContainerLowest,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl2),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Returns the dark theme with the given [SemanticColors] extension baked in.
+  static ThemeData darkWith(SemanticColors semanticColors) {
+    return dark.copyWith(extensions: <ThemeExtension<dynamic>>[semanticColors]);
+  }
 }

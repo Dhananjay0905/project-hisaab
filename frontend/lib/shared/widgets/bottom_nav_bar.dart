@@ -40,9 +40,9 @@ class AppBottomNavBar extends StatelessWidget {
         child: Container(
           height: AppSpacing.bottomNavHeight + bottom,
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLowest.withValues(alpha: 0.90),
-            border: const Border(
-              top: BorderSide(color: AppColors.outlineVariant, width: 0.5),
+            color: Theme.of(context).colorScheme.surfaceContainerLowest.withValues(alpha: 0.90),
+            border: Border(
+              top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant, width: 0.5),
             ),
           ),
           child: SafeArea(
@@ -51,15 +51,15 @@ class AppBottomNavBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 // Tab 0: Home
-                _buildTab(0),
+                _buildTab(context, 0),
                 // Tab 1: History
-                _buildTab(1),
+                _buildTab(context, 1),
                 // Centre: Add FAB
                 _AddButton(onPressed: onAddPressed),
                 // Tab 2: Stats
-                _buildTab(2),
+                _buildTab(context, 2),
                 // Tab 3: Me
-                _buildTab(3),
+                _buildTab(context, 3),
               ],
             ),
           ),
@@ -70,11 +70,12 @@ class AppBottomNavBar extends StatelessWidget {
 
 
 
-  Widget _buildTab(int index) {
+  Widget _buildTab(BuildContext context, int index) {
     // Map visual position to logical index (skipping centre FAB slot)
     // positions: 0→0, 1→1, [FAB], 2→2, 3→3
     final selected = currentIndex == index;
     final item = _tabs[index];
+    final cs = Theme.of(context).colorScheme;
 
     return Expanded(
       child: GestureDetector(
@@ -92,21 +93,21 @@ class AppBottomNavBar extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: selected
-                    ? AppColors.primary.withValues(alpha: 0.12)
+                    ? cs.primary.withValues(alpha: 0.12)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(AppSpacing.xl4),
               ),
               child: Icon(
                 item.icon,
                 size: 24,
-                color: selected ? AppColors.primary : AppColors.onSurfaceVariant,
+                color: selected ? cs.primary : cs.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               item.label,
               style: AppTypography.navLabel.copyWith(
-                color: selected ? AppColors.primary : AppColors.onSurfaceVariant,
+                color: selected ? cs.primary : cs.onSurfaceVariant,
               ),
             ),
           ],
@@ -122,6 +123,7 @@ class _AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: GestureDetector(
@@ -130,17 +132,20 @@ class _AddButton extends StatelessWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
+            gradient: isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(AppSpacing.lg),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.35),
+                color: (isDark
+                        ? const Color(0xFF3A5CC5)
+                        : const Color(0xFF3861FB))
+                    .withValues(alpha: isDark ? 0.25 : 0.35),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: const Icon(Icons.add_rounded, color: AppColors.onPrimary, size: 28),
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
         ),
       ),
     );

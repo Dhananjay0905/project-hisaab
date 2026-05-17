@@ -21,6 +21,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
     required double openingBalance,
+    required bool policyAccepted,
   }) async {
     try {
       await _remote.register(
@@ -28,6 +29,7 @@ class AuthRepositoryImpl implements AuthRepository {
         email: email,
         password: password,
         openingBalance: openingBalance,
+        policyAccepted: policyAccepted,
       );
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message, fieldErrors: e.fieldErrors);
@@ -59,7 +61,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<User> login({
+  Future<({User user, bool accountRecovered})> login({
     required String email,
     required String password,
   }) async {
@@ -68,6 +70,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final user = result['user'] as User;
       final accessToken = result['accessToken'] as String;
       final refreshToken = result['refreshToken'] as String;
+      final accountRecovered = result['accountRecovered'] as bool? ?? false;
 
       await _storage.saveTokens(
         accessToken: accessToken,
@@ -81,7 +84,7 @@ class AuthRepositoryImpl implements AuthRepository {
         currencySymbol: user.currencySymbol,
       );
 
-      return user;
+      return (user: user, accountRecovered: accountRecovered);
     } on UnauthorizedException catch (e) {
       throw AuthFailure(e.message);
     } on UnverifiedEmailException {
@@ -198,6 +201,17 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<DateTime> deleteAccount(String password) async {
+    try {
+      return await _remote.deleteAccount(password);
+    } on NetworkException {
+      throw const NetworkFailure();
+    } on AppException catch (e) {
+      throw ServerFailure(e.message);
+    }
+  }
+
+  @override
   Future<bool> hasValidSession() => _storage.hasSession();
 
   @override
@@ -218,9 +232,22 @@ class AuthRepositoryImpl implements AuthRepository {
         currencySymbol: currencySymbol ?? '₹',
         openingBalance: 0,
         createdAt: DateTime.now(),
+        // policyAcceptedAt unknown from cache — getMe() will fetch the real value
+        policyAcceptedAt: null,
       );
     } catch (_) {
       return null;
+    }
+  }
+
+  @override
+  Future<void> acceptPolicy() async {
+    try {
+      await _remote.acceptPolicy();
+    } on NetworkException {
+      throw const NetworkFailure();
+    } on AppException catch (e) {
+      throw ServerFailure(e.message);
     }
   }
 }

@@ -27,7 +27,10 @@ final class AuthInitial extends AuthStatus {
 
 final class AuthAuthenticated extends AuthStatus {
   final User user;
-  const AuthAuthenticated(this.user);
+  /// True when the user logged in during a scheduled-deletion grace period,
+  /// cancelling the deletion. The home screen shows a recovery banner.
+  final bool accountRecovered;
+  const AuthAuthenticated(this.user, {this.accountRecovered = false});
 }
 
 final class AuthUnauthenticated extends AuthStatus {
@@ -43,6 +46,19 @@ final class AuthSessionExpired extends AuthStatus {
 final class AuthEmailUnverified extends AuthStatus {
   final String email;
   const AuthEmailUnverified(this.email);
+}
+
+/// Account deletion has been scheduled (5-day grace period starts).
+final class AuthAccountDeletionScheduled extends AuthStatus {
+  final DateTime scheduledDeleteAt;
+  const AuthAccountDeletionScheduled(this.scheduledDeleteAt);
+}
+
+/// Logged in but hasn't accepted the Privacy Policy & ToS yet.
+/// Router redirects to /accept-policy. Cannot be dismissed.
+final class AuthPolicyPending extends AuthStatus {
+  final User user;
+  const AuthPolicyPending(this.user);
 }
 
 // ─── Notifier ────────────────────────────────────────────────────────────────
@@ -69,6 +85,8 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
     try {
       final user = await _repo.getMe();
       _hasInitialized = true;
+      // If user hasn't accepted PP/ToS yet, hold them at the policy gate
+      if (user.policyAcceptedAt == null) return AuthPolicyPending(user);
       return AuthAuthenticated(user);
     } on AuthFailure {
       // Server explicitly rejected the refresh token → real logout.
@@ -80,7 +98,8 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
       // → do NOT log out. Restore from cached session data.
       _hasInitialized = true;
       final cached = await _repo.getCachedUser();
-      if (cached != null) return AuthAuthenticated(cached);
+      // Cached user has no policyAcceptedAt — assume pending until getMe() succeeds
+      if (cached != null) return AuthPolicyPending(cached);
       return const AuthUnauthenticated();
     }
 
@@ -93,8 +112,11 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
     // so the router does NOT treat this as "initializing" and redirect to /splash.
     state = const AsyncLoading<AuthStatus>().copyWithPrevious(state);
     state = await AsyncValue.guard(() async {
-      final user = await _repo.login(email: email, password: password);
-      return AuthAuthenticated(user);
+      final result = await _repo.login(email: email, password: password);
+      final user = result.user;
+      // Gate on policy acceptance before granting full access
+      if (user.policyAcceptedAt == null) return AuthPolicyPending(user);
+      return AuthAuthenticated(user, accountRecovered: result.accountRecovered);
     });
   }
 
@@ -113,6 +135,7 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
         email: email,
         password: password,
         openingBalance: openingBalance,
+        policyAccepted: true, // Checkbox is required to submit the form
       );
       return AuthEmailUnverified(email);
     });
@@ -167,6 +190,20 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
     state = const AsyncData(AuthSessionExpired());
   }
 
+  // ── Policy acceptance ───────────────────────────────────────────────
+
+  /// Called when the user taps "I Accept" on the policy acceptance page.
+  /// Sends the acceptance to the server, then transitions to [AuthAuthenticated].
+  Future<void> acceptPolicy() async {
+    final currentState = state.valueOrNull;
+    if (currentState is! AuthPolicyPending) return;
+    state = const AsyncLoading<AuthStatus>().copyWithPrevious(state);
+    state = await AsyncValue.guard(() async {
+      await _repo.acceptPolicy();
+      return AuthAuthenticated(currentState.user);
+    });
+  }
+
   // ── Profile editing ───────────────────────────────────────────────────────
 
   /// Update name and immediately reflect the change in the authenticated state.
@@ -192,6 +229,14 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
       currentPassword: currentPassword,
       newPassword: newPassword,
     );
+  }
+
+  /// Schedule account deletion. Clears auth state and routes to deletion screen.
+  Future<void> scheduleAccountDeletion(String password) async {
+    final scheduledDeleteAt = await _repo.deleteAccount(password);
+    // Clear local session — tokens are already revoked server-side
+    await _repo.logout();
+    state = AsyncData(AuthAccountDeletionScheduled(scheduledDeleteAt));
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 
 import '../../../../core/constants/app_typography.dart';
@@ -175,8 +174,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -190,7 +189,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
+                  color: Theme.of(context).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -203,7 +202,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
             Text(
                 '${dayTxns.length} transaction${dayTxns.length == 1 ? '' : 's'}',
                 style: AppTypography.bodySmall
-                    .copyWith(color: AppColors.onSurfaceVariant)),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 20),
             _ContextMenuItem(
               icon: Icons.visibility_rounded,
@@ -270,7 +269,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
             padding: const EdgeInsets.only(right: 12),
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(10),
               ),
               padding: const EdgeInsets.all(3),
@@ -524,8 +523,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                color: AppColors.error, size: 48),
+            Icon(Icons.error_outline_rounded,
+                color: Theme.of(context).colorScheme.error, size: 48),
             const SizedBox(height: 16),
             Text('Failed to load transactions',
                 style: Theme.of(context).textTheme.titleMedium),
@@ -554,9 +553,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLowest,
+            color: Theme.of(context).colorScheme.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.outlineVariant.withAlpha(80)),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withAlpha(80)),
           ),
           child: TableCalendar<Transaction>(
             firstDay: DateTime(2000),
@@ -581,42 +580,42 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               titleCentered: true,
               formatButtonVisible: true,
               formatButtonDecoration: BoxDecoration(
-                border: Border.all(color: AppColors.primary.withAlpha(120)),
+                border: Border.all(color: Theme.of(context).colorScheme.primary.withAlpha(120)),
                 borderRadius: BorderRadius.circular(10),
               ),
               formatButtonTextStyle: AppTypography.labelSmall.copyWith(
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
               titleTextStyle: AppTypography.titleSmall.copyWith(
                 fontWeight: FontWeight.w700,
               ),
-              leftChevronIcon: const Icon(Icons.chevron_left_rounded,
-                  color: AppColors.primary),
-              rightChevronIcon: const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.primary),
+              leftChevronIcon: Icon(Icons.chevron_left_rounded,
+                  color: Theme.of(context).colorScheme.primary),
+              rightChevronIcon: Icon(Icons.chevron_right_rounded,
+                  color: Theme.of(context).colorScheme.primary),
             ),
             daysOfWeekStyle: DaysOfWeekStyle(
               weekdayStyle: AppTypography.labelSmall.copyWith(
-                color: AppColors.onSurfaceVariant,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
               ),
               weekendStyle: AppTypography.labelSmall.copyWith(
-                color: AppColors.onSurfaceVariant.withAlpha(150),
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(150),
                 fontWeight: FontWeight.w600,
               ),
             ),
             calendarStyle: CalendarStyle(
               outsideDaysVisible: false,
               todayDecoration: BoxDecoration(
-                color: AppColors.primary.withAlpha(40),
+                color: Theme.of(context).colorScheme.primary.withAlpha(40),
                 shape: BoxShape.circle,
               ),
               todayTextStyle: AppTypography.bodyMedium.copyWith(
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w700,
               ),
-              selectedDecoration: const BoxDecoration(
-                color: AppColors.primary,
+              selectedDecoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
                 shape: BoxShape.circle,
               ),
               selectedTextStyle: AppTypography.bodyMedium.copyWith(
@@ -625,13 +624,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               ),
               defaultTextStyle: AppTypography.bodyMedium,
               weekendTextStyle: AppTypography.bodyMedium.copyWith(
-                color: AppColors.onSurfaceVariant,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               markersMaxCount: 3,
               markerSize: 6,
               markersAnchor: 0.7,
-              markerDecoration: const BoxDecoration(
-                color: AppColors.primary,
+              markerDecoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
                 shape: BoxShape.circle,
               ),
             ),
@@ -685,19 +684,19 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                         children: [
                           Icon(Icons.touch_app_rounded,
                               size: 48,
-                              color: AppColors.onSurfaceVariant.withAlpha(80)),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(80)),
                           const SizedBox(height: 12),
                           Text(
                             'Tap a date to see transactions',
                             style: AppTypography.bodyMedium.copyWith(
-                              color: AppColors.onSurfaceVariant,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Long-press for quick actions',
                             style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.onSurfaceVariant.withAlpha(150),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(150),
                             ),
                           ),
                         ],
@@ -711,12 +710,12 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                               Icon(Icons.event_busy_rounded,
                                   size: 48,
                                   color:
-                                      AppColors.onSurfaceVariant.withAlpha(80)),
+                                      Theme.of(context).colorScheme.onSurfaceVariant.withAlpha(80)),
                               const SizedBox(height: 12),
                               Text(
                                 'No transactions on ${DateFormat('MMM d').format(_selectedDay!)}',
                                 style: AppTypography.bodyMedium.copyWith(
-                                  color: AppColors.onSurfaceVariant,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -744,7 +743,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                                           .format(_selectedDay!),
                                       style: AppTypography.titleSmall.copyWith(
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.primary,
+                                        color: Theme.of(context).colorScheme.primary,
                                       ),
                                     ),
                                     const Spacer(),
@@ -841,7 +840,7 @@ class _DateGroupHeader extends StatelessWidget {
             label,
             style: AppTypography.labelMedium.copyWith(
               fontWeight: FontWeight.w700,
-              color: AppColors.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               letterSpacing: 0.2,
             ),
           ),
@@ -850,7 +849,7 @@ class _DateGroupHeader extends StatelessWidget {
           Expanded(
             child: Container(
               height: 1,
-              color: AppColors.surfaceContainerHigh,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
             ),
           ),
           // Daily totals
@@ -898,13 +897,13 @@ class _ModeToggleButton extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primary : Colors.transparent,
+          color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           icon,
           size: 20,
-          color: isActive ? Colors.white : AppColors.onSurfaceVariant,
+          color: isActive ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
     );
@@ -926,7 +925,6 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = selectedColor ?? Theme.of(context).colorScheme.primary;
 
     return GestureDetector(
@@ -948,9 +946,7 @@ class _FilterChip extends StatelessWidget {
           label,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: isSelected
-                    ? (isDark || selectedColor == null
-                        ? Colors.white
-                        : Colors.white)
+                    ? Theme.of(context).colorScheme.onPrimary
                     : Theme.of(context).colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
@@ -1081,20 +1077,20 @@ class _ContextMenuItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLow,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: AppColors.primary),
+            Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label,
                   style: AppTypography.bodyMedium
                       .copyWith(fontWeight: FontWeight.w500)),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                size: 20, color: AppColors.outlineVariant),
+            Icon(Icons.chevron_right_rounded,
+                size: 20, color: Theme.of(context).colorScheme.outlineVariant),
           ],
         ),
       ),
@@ -1232,7 +1228,7 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
+                    color: Theme.of(context).colorScheme.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1302,7 +1298,7 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
                         child: Text(
                           'No categories yet',
                           style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -1323,7 +1319,7 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
                           Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),

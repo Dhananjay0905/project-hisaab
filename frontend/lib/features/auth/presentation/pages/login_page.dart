@@ -18,6 +18,7 @@ import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/widgets/gradient_button.dart';
 import '../providers/auth_provider.dart';
+import '../../../../../../../../../../core/theme/semantic_colors.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -101,8 +102,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+        decoration: BoxDecoration(
+          gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.backgroundGradient : AppColors.backgroundGradient,
         ),
         child: SafeArea(
           child: Padding(
@@ -133,14 +134,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         Text(
                           'Hisaab',
                           style: AppTypography.headlineSmall.copyWith(
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         Text(
                           'Your personal finance companion',
                           style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -155,9 +156,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppSpacing.cardPadding),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLowest,
+                    color: Theme.of(context).colorScheme.surfaceContainerLowest,
                     borderRadius: BorderRadius.circular(AppRadius.xl2),
-                    boxShadow: AppColors.softShadow,
+                    boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.softShadow : AppColors.softShadow,
                   ),
                   child: Form(
                     key: _formKey,
@@ -168,14 +169,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         Text(
                           'Welcome back',
                           style: AppTypography.headlineSmall.copyWith(
-                            color: AppColors.onSurface,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Sign in to your account',
                           style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 22),
@@ -227,7 +228,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             child: Text(
                               'Forgot password?',
                               style: AppTypography.labelMedium.copyWith(
-                                color: AppColors.primary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
                           ),
@@ -260,14 +261,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   child: RichText(
                     text: TextSpan(
                       style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.onSurfaceVariant,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       children: [
                         const TextSpan(text: "New here? "),
                         TextSpan(
                           text: 'Create an account →',
                           style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -300,20 +301,20 @@ class _ErrorBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.cashOutSurface,
+        color: SemanticColors.of(context).cashOutSurface,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.cashOut.withValues(alpha: 0.3)),
+        border: Border.all(color: SemanticColors.of(context).cashOut.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              color: AppColors.cashOut, size: 18),
+          Icon(Icons.error_outline_rounded,
+              color: SemanticColors.of(context).cashOut, size: 18),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               message,
               style:
-                  AppTypography.bodySmall.copyWith(color: AppColors.cashOut),
+                  AppTypography.bodySmall.copyWith(color: SemanticColors.of(context).cashOut),
             ),
           ),
         ],

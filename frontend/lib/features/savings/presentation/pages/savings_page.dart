@@ -43,7 +43,7 @@ class _SavingsPageState extends ConsumerState<SavingsPage> {
     final wishlistAsync = ref.watch(wishlistProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         child: CustomScrollView(
@@ -51,7 +51,7 @@ class _SavingsPageState extends ConsumerState<SavingsPage> {
           slivers: [
             SliverAppBar(
               pinned: true,
-              backgroundColor: AppColors.surface,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -59,7 +59,7 @@ class _SavingsPageState extends ConsumerState<SavingsPage> {
               ),
               title: Text('Savings',
                   style: AppTypography.titleLarge.copyWith(
-                      color: AppColors.onSurface, fontWeight: FontWeight.w700)),
+                      color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700)),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
@@ -70,7 +70,7 @@ class _SavingsPageState extends ConsumerState<SavingsPage> {
               error: (e, _) => SliverFillRemaining(
                   child: Center(
                       child: Text('Error: $e',
-                          style: TextStyle(color: AppColors.error)))),
+                          style: TextStyle(color: Theme.of(context).colorScheme.error)))),
               data: (savings) {
                 final wishlistItems = (wishlistAsync.valueOrNull ?? [])
                     .where((i) => !i.isPurchased)
@@ -169,7 +169,7 @@ class _SavingsPageState extends ConsumerState<SavingsPage> {
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.surfaceContainerLowest,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.md)),
         title: Text('Update Total Savings', style: AppTypography.titleMedium),
@@ -248,9 +248,9 @@ class _BalanceHeroCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(AppSpacing.lg),
-        boxShadow: AppColors.cardShadow,
+        boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.cardShadow : AppColors.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,12 +307,12 @@ class _SpendableToggle extends StatelessWidget {
           horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
       decoration: BoxDecoration(
         color: value
-            ? AppColors.primary.withValues(alpha: 0.08)
-            : AppColors.surfaceContainerLowest,
+            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08)
+            : Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.md),
         border: Border.all(
           color:
-              value ? AppColors.primary.withValues(alpha: 0.3) : AppColors.surfaceContainer,
+              value ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3) : Theme.of(context).colorScheme.surfaceContainer,
         ),
       ),
       child: Row(
@@ -321,11 +321,11 @@ class _SpendableToggle extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.secondary.withValues(alpha: 0.12),
+              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.account_balance_wallet_rounded,
-                size: 20, color: AppColors.secondary),
+            child: Icon(Icons.account_balance_wallet_rounded,
+                size: 20, color: Theme.of(context).colorScheme.secondary),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -339,15 +339,15 @@ class _SpendableToggle extends StatelessWidget {
                       ? 'Home shows balance minus ₹${savingsAmount.toStringAsFixed(0)} savings'
                       : 'Home shows full balance',
                   style: AppTypography.bodySmall
-                      .copyWith(color: AppColors.onSurfaceVariant),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
           ),
           Switch.adaptive(
             value: value,
-            activeThumbColor: AppColors.primary,
-            activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
+            activeThumbColor: Theme.of(context).colorScheme.primary,
+            activeTrackColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
             onChanged: onChanged,
           ),
         ],
@@ -396,9 +396,9 @@ class _CashDeductionCardState extends State<_CashDeductionCard> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.md),
-        border: Border.all(color: AppColors.surfaceContainer),
+        border: Border.all(color: Theme.of(context).colorScheme.surfaceContainer),
       ),
       child: Column(
         children: [
@@ -414,11 +414,11 @@ class _CashDeductionCardState extends State<_CashDeductionCard> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.tertiary.withValues(alpha: 0.12),
+                      color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.wallet_rounded,
-                        size: 20, color: AppColors.tertiary),
+                    child: Icon(Icons.wallet_rounded,
+                        size: 20, color: Theme.of(context).colorScheme.tertiary),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -431,7 +431,7 @@ class _CashDeductionCardState extends State<_CashDeductionCard> {
                               ? '₹${widget.currentValue.toStringAsFixed(2)} kept separately'
                               : 'Cash/savings not in your main balance',
                           style: AppTypography.bodySmall
-                              .copyWith(color: AppColors.onSurfaceVariant),
+                              .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -440,14 +440,14 @@ class _CashDeductionCardState extends State<_CashDeductionCard> {
                     widget.isExpanded
                         ? Icons.expand_less_rounded
                         : Icons.expand_more_rounded,
-                    color: AppColors.outlineVariant,
+                    color: Theme.of(context).colorScheme.outlineVariant,
                   ),
                 ],
               ),
             ),
           ),
           if (widget.isExpanded) ...[
-            const Divider(height: 1, color: AppColors.surfaceContainer),
+            Divider(height: 1, color: Theme.of(context).colorScheme.surfaceContainer),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
@@ -537,12 +537,12 @@ class _Chip extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.surfaceContainer,
+          color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainer,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(label,
             style: AppTypography.labelMedium.copyWith(
-              color: selected ? Colors.white : AppColors.onSurfaceVariant,
+              color: selected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant,
             )),
       ),
     );
@@ -597,9 +597,9 @@ class _WishlistChecklist extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.md),
-        border: Border.all(color: AppColors.surfaceContainer),
+        border: Border.all(color: Theme.of(context).colorScheme.surfaceContainer),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -610,7 +610,7 @@ class _WishlistChecklist extends StatelessWidget {
                 AppSpacing.md, AppSpacing.sm + 2, AppSpacing.md, AppSpacing.xs),
             child: Text('Wishlist Items',
                 style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.onSurfaceVariant, letterSpacing: 1.1)),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant, letterSpacing: 1.1)),
           ),
           ...items.asMap().entries.map((e) {
             final i = e.key;
@@ -631,19 +631,19 @@ class _WishlistChecklist extends StatelessWidget {
                           height: 22,
                           decoration: BoxDecoration(
                             color: item.deductFromSavings
-                                ? AppColors.primary
+                                ? Theme.of(context).colorScheme.primary
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
                               color: item.deductFromSavings
-                                  ? AppColors.primary
-                                  : AppColors.outlineVariant,
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.outlineVariant,
                               width: 2,
                             ),
                           ),
                           child: item.deductFromSavings
-                              ? const Icon(Icons.check_rounded,
-                                  size: 14, color: Colors.white)
+                              ? Icon(Icons.check_rounded,
+                                  size: 14, color: Theme.of(context).colorScheme.onPrimary)
                               : null,
                         ),
                         const SizedBox(width: AppSpacing.sm),
@@ -667,7 +667,7 @@ class _WishlistChecklist extends StatelessWidget {
                                         ? '₹${item.targetPrice!.toStringAsFixed(0)} target'
                                         : '₹${item.amountSaved.toStringAsFixed(0)} saved',
                                     style: AppTypography.bodySmall.copyWith(
-                                        color: AppColors.secondary)),
+                                        color: Theme.of(context).colorScheme.secondary)),
                             ],
                           ),
                         ),
@@ -676,7 +676,7 @@ class _WishlistChecklist extends StatelessWidget {
                               ? '−₹${(item.targetPrice ?? item.amountSaved).toStringAsFixed(0)}'
                               : '',
                           style: AppTypography.labelMedium.copyWith(
-                              color: AppColors.cashOut,
+                              color: SemanticColors.of(context).cashOut,
                               fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -684,10 +684,10 @@ class _WishlistChecklist extends StatelessWidget {
                   ),
                 ),
                 if (i < items.length - 1)
-                  const Divider(
+                  Divider(
                       height: 1,
                       indent: 56,
-                      color: AppColors.surfaceContainer),
+                      color: Theme.of(context).colorScheme.surfaceContainer),
               ],
             );
           }),
@@ -716,13 +716,13 @@ class _WishlistTotal extends StatelessWidget {
           horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         color: overBudget
-            ? AppColors.error.withValues(alpha: 0.08)
-            : AppColors.secondary.withValues(alpha: 0.08),
+            ? Theme.of(context).colorScheme.error.withValues(alpha: 0.08)
+            : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppSpacing.md),
         border: Border.all(
           color: overBudget
-              ? AppColors.error.withValues(alpha: 0.3)
-              : AppColors.secondary.withValues(alpha: 0.3),
+              ? Theme.of(context).colorScheme.error.withValues(alpha: 0.3)
+              : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -730,10 +730,10 @@ class _WishlistTotal extends StatelessWidget {
         children: [
           Text('Total wishlist deduction',
               style: AppTypography.bodySmall
-                  .copyWith(color: AppColors.onSurfaceVariant)),
+                  .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           Text('−₹${checkedTotal.toStringAsFixed(2)}',
               style: AppTypography.titleSmall.copyWith(
-                  color: overBudget ? AppColors.error : SemanticColors.of(context).cashOut,
+                  color: overBudget ? Theme.of(context).colorScheme.error : SemanticColors.of(context).cashOut,
                   fontWeight: FontWeight.w700)),
         ],
       ),
@@ -754,9 +754,9 @@ class _EmptyWishlistHint extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
+          color: Theme.of(context).colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(AppSpacing.md),
-          border: Border.all(color: AppColors.surfaceContainer),
+          border: Border.all(color: Theme.of(context).colorScheme.surfaceContainer),
         ),
         child: Row(
           children: [
@@ -765,10 +765,10 @@ class _EmptyWishlistHint extends StatelessWidget {
             Expanded(
               child: Text('No wishlist items yet. Tap to add some.',
                   style: AppTypography.bodySmall
-                      .copyWith(color: AppColors.onSurfaceVariant)),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.outlineVariant),
+            Icon(Icons.chevron_right_rounded,
+                color: Theme.of(context).colorScheme.outlineVariant),
           ],
         ),
       ),
@@ -792,16 +792,16 @@ class _DeductionBreakdown extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.md),
-        border: Border.all(color: AppColors.surfaceContainer),
+        border: Border.all(color: Theme.of(context).colorScheme.surfaceContainer),
       ),
       child: Column(
         children: [
           _Row(label: 'Raw Savings', value: raw),
           _Row(label: '− Wishlist (target prices)', value: -wishlist),
           _Row(label: '− Offline Savings', value: -cash),
-          const Divider(height: 16, color: AppColors.surfaceContainer),
+          Divider(height: 16, color: Theme.of(context).colorScheme.surfaceContainer),
           _Row(label: 'Net Savings', value: effective, isTotal: true),
         ],
       ),
@@ -826,14 +826,14 @@ class _Row extends StatelessWidget {
               style: isTotal
                   ? AppTypography.titleSmall
                   : AppTypography.bodySmall
-                      .copyWith(color: AppColors.onSurfaceVariant)),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           Text(
             '${value < 0 ? '' : ''}₹${value.abs().toStringAsFixed(2)}',
             style: isTotal
                 ? AppTypography.titleSmall.copyWith(
-                    color: AppColors.primary, fontWeight: FontWeight.w700)
+                    color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700)
                 : AppTypography.bodySmall.copyWith(
-                    color: value < 0 ? SemanticColors.of(context).cashOut : AppColors.onSurface),
+                    color: value < 0 ? SemanticColors.of(context).cashOut : Theme.of(context).colorScheme.onSurface),
           ),
         ],
       ),

@@ -42,7 +42,7 @@ class _RecurringPageState extends ConsumerState<RecurringPage> {
     final asyncRecurring = ref.watch(recurringProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         child: CustomScrollView(
@@ -50,12 +50,12 @@ class _RecurringPageState extends ConsumerState<RecurringPage> {
           slivers: [
             SliverAppBar(
               pinned: true,
-              backgroundColor: AppColors.surface,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               title: Text(
                 'Recurring',
                 style: AppTypography.titleLarge
-                    .copyWith(color: AppColors.onSurface, fontWeight: FontWeight.w700),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700),
               ),
             ),
             asyncRecurring.when(
@@ -66,7 +66,7 @@ class _RecurringPageState extends ConsumerState<RecurringPage> {
                 child: Center(
                   child: Text('Failed to load recurring transactions',
                       style: AppTypography.bodyMedium
-                          .copyWith(color: AppColors.onSurfaceVariant)),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ),
               ),
               data: (items) {
@@ -122,8 +122,8 @@ class _RecurringPageState extends ConsumerState<RecurringPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showFormSheet(context, ref),
-        backgroundColor: AppColors.tertiary,
-        foregroundColor: AppColors.onTertiary,
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
+        foregroundColor: Theme.of(context).colorScheme.onTertiary,
         icon: const Icon(Icons.repeat_rounded),
         label: Text('Add Recurring', style: AppTypography.labelLarge),
       ),
@@ -153,7 +153,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: AppTypography.labelSmall.copyWith(
-          color: AppColors.onSurfaceVariant,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           letterSpacing: 1.2,
         ),
       ),
@@ -184,11 +184,11 @@ class _RecurringCard extends ConsumerWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: AppSpacing.lg),
         decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppSpacing.md),
         ),
-        child: const Icon(Icons.delete_outline_rounded,
-            color: AppColors.error, size: 24),
+        child: Icon(Icons.delete_outline_rounded,
+            color: Theme.of(context).colorScheme.error, size: 24),
       ),
       confirmDismiss: (_) => _confirmDelete(context),
       onDismissed: (_) async {
@@ -196,9 +196,9 @@ class _RecurringCard extends ConsumerWidget {
           await ref.read(recurringProvider.notifier).remove(item.id);
         } catch (_) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Failed to delete.'),
-                backgroundColor: AppColors.error));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: const Text('Failed to delete.'),
+                backgroundColor: Theme.of(context).colorScheme.error));
           }
         }
       },
@@ -206,12 +206,14 @@ class _RecurringCard extends ConsumerWidget {
         onTap: () => _showEditSheet(context, ref),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLowest,
+            color: Theme.of(context).colorScheme.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(AppSpacing.md),
-            boxShadow: AppColors.softShadow,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? AppColorsDark.softShadow
+                : AppColors.softShadow,
             border: isDue
                 ? Border.all(
-                    color: AppColors.tertiary.withValues(alpha: 0.4), width: 1.5)
+                    color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.4), width: 1.5)
                 : null,
           ),
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -254,13 +256,13 @@ class _RecurringCard extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.tertiaryContainer
+                              color: Theme.of(context).colorScheme.tertiaryContainer
                                   .withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text('Due today',
                                 style: AppTypography.labelSmall.copyWith(
-                                    color: AppColors.tertiary,
+                                    color: Theme.of(context).colorScheme.tertiary,
                                     fontWeight: FontWeight.w600)),
                           ),
                         ],
@@ -272,24 +274,24 @@ class _RecurringCard extends ConsumerWidget {
                         Text(
                           item.category?.name ?? 'Uncategorised',
                           style: AppTypography.bodySmall
-                              .copyWith(color: AppColors.onSurfaceVariant),
+                              .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
-                        const Text(' · ',
+                        Text(' · ',
                             style: TextStyle(
-                                color: AppColors.outlineVariant, fontSize: 12)),
+                                color: Theme.of(context).colorScheme.outlineVariant, fontSize: 12)),
                         Text(
                           item.frequencyLabel,
                           style: AppTypography.bodySmall
-                              .copyWith(color: AppColors.onSurfaceVariant),
+                              .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                         if (!item.isActive) ...[
-                          const Text(' · ',
+                          Text(' · ',
                               style: TextStyle(
-                                  color: AppColors.outlineVariant,
+                                  color: Theme.of(context).colorScheme.outlineVariant,
                                   fontSize: 12)),
                           Text('Paused',
                               style: AppTypography.bodySmall
-                                  .copyWith(color: AppColors.outline)),
+                                  .copyWith(color: Theme.of(context).colorScheme.outline)),
                         ],
                       ],
                     ),
@@ -297,7 +299,7 @@ class _RecurringCard extends ConsumerWidget {
                     Text(
                       'Next: ${dateFmt.format(item.nextDueDate)}',
                       style: AppTypography.labelSmall
-                          .copyWith(color: AppColors.outlineVariant),
+                          .copyWith(color: Theme.of(context).colorScheme.outlineVariant),
                     ),
                   ],
                 ),
@@ -323,7 +325,7 @@ class _RecurringCard extends ConsumerWidget {
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: item.isActive
-                            ? AppColors.surfaceContainerLow
+                            ? Theme.of(context).colorScheme.surfaceContainerLow
                             : SemanticColors.of(context).cashInSurface,
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -331,7 +333,7 @@ class _RecurringCard extends ConsumerWidget {
                         item.isActive ? 'Pause' : 'Resume',
                         style: AppTypography.labelSmall.copyWith(
                           color: item.isActive
-                              ? AppColors.onSurfaceVariant
+                              ? Theme.of(context).colorScheme.onSurfaceVariant
                               : SemanticColors.of(context).cashIn,
                           fontWeight: FontWeight.w500,
                         ),
@@ -351,7 +353,7 @@ class _RecurringCard extends ConsumerWidget {
     return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: AppColors.surfaceContainerLowest,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text('Cancel "${item.title}"?',
@@ -359,22 +361,22 @@ class _RecurringCard extends ConsumerWidget {
             content: Text(
               'This recurring transaction will be permanently removed.',
               style: AppTypography.bodySmall
-                  .copyWith(color: AppColors.onSurfaceVariant),
+                  .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
                 child: Text('Keep',
                     style: AppTypography.labelLarge
-                        .copyWith(color: AppColors.onSurfaceVariant)),
+                        .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ),
               FilledButton(
                 style:
-                    FilledButton.styleFrom(backgroundColor: AppColors.error),
+                    FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
                 onPressed: () => Navigator.of(ctx).pop(true),
                 child: Text('Delete',
                     style: AppTypography.labelLarge
-                        .copyWith(color: AppColors.onError)),
+                        .copyWith(color: Theme.of(context).colorScheme.onError)),
               ),
             ],
           ),
@@ -407,35 +409,35 @@ class _EmptyState extends StatelessWidget {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: AppColors.tertiaryContainer.withValues(alpha: 0.15),
+            color: Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(24),
           ),
-          child: const Icon(Icons.repeat_rounded,
-              size: 36, color: AppColors.tertiary),
+          child: Icon(Icons.repeat_rounded,
+              size: 36, color: Theme.of(context).colorScheme.tertiary),
         ),
         const SizedBox(height: AppSpacing.md),
         Text('No recurring transactions',
             style: AppTypography.titleMedium
-                .copyWith(color: AppColors.onSurface)),
+                .copyWith(color: Theme.of(context).colorScheme.onSurface)),
         const SizedBox(height: AppSpacing.xs),
         Text(
           'Add subscriptions, salaries,\nor any regular payment.',
           style:
-              AppTypography.bodySmall.copyWith(color: AppColors.onSurfaceVariant),
+              AppTypography.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.xl),
         FilledButton.icon(
           onPressed: onAdd,
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.tertiary,
+            backgroundColor: Theme.of(context).colorScheme.tertiary,
             padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.xl, vertical: AppSpacing.md),
           ),
-          icon: const Icon(Icons.add_rounded, color: AppColors.onTertiary),
+          icon: Icon(Icons.add_rounded, color: Theme.of(context).colorScheme.onTertiary),
           label: Text('Add Recurring',
               style: AppTypography.labelLarge
-                  .copyWith(color: AppColors.onTertiary)),
+                  .copyWith(color: Theme.of(context).colorScheme.onTertiary)),
         ),
       ],
     );
@@ -506,8 +508,8 @@ class _RecurringFormSheetState
 
     return Container(
       margin: EdgeInsets.only(bottom: bottom),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
@@ -523,7 +525,7 @@ class _RecurringFormSheetState
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.outlineVariant,
+                    color: Theme.of(context).colorScheme.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -543,7 +545,7 @@ class _RecurringFormSheetState
                     _TypeChip(
                       label: 'Expense',
                       selected: _type == 'EXPENSE',
-                      color: AppColors.cashOut,
+                      color: SemanticColors.of(context).cashOut,
                       onTap: () => setState(() {
                         _type = 'EXPENSE';
                         _selectedCategory = null;
@@ -553,7 +555,7 @@ class _RecurringFormSheetState
                     _TypeChip(
                       label: 'Income',
                       selected: _type == 'INCOME',
-                      color: AppColors.cashIn,
+                      color: SemanticColors.of(context).cashIn,
                       onTap: () => setState(() {
                         _type = 'INCOME';
                         _selectedCategory = null;
@@ -588,7 +590,7 @@ class _RecurringFormSheetState
                 initialValue: _selectedCategory,
                 hint: Text('Select category',
                     style: AppTypography.bodyMedium
-                        .copyWith(color: AppColors.outlineVariant)),
+                        .copyWith(color: Theme.of(context).colorScheme.outlineVariant)),
                 items: filteredCats
                     .map((c) => DropdownMenuItem(
                           value: c,
@@ -599,7 +601,7 @@ class _RecurringFormSheetState
                 onChanged: (c) => setState(() => _selectedCategory = c),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: AppColors.surfaceContainerLow,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -620,11 +622,11 @@ class _RecurringFormSheetState
                           label: Text(_freqLabel(f)),
                           selected: _frequency == f,
                           selectedColor:
-                              AppColors.tertiary.withValues(alpha: 0.15),
+                              Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.15),
                           labelStyle: AppTypography.labelMedium.copyWith(
                             color: _frequency == f
-                                ? AppColors.tertiary
-                                : AppColors.onSurfaceVariant,
+                                ? Theme.of(context).colorScheme.tertiary
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           onSelected: (_) =>
                               setState(() => _frequency = f),
@@ -642,13 +644,13 @@ class _RecurringFormSheetState
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md, vertical: 14),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today_rounded,
-                          size: 18, color: AppColors.onSurfaceVariant),
+                      Icon(Icons.calendar_today_rounded,
+                          size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(width: AppSpacing.sm),
                       Text(
                         DateFormat('d MMMM yyyy').format(_startDate),
@@ -667,8 +669,8 @@ class _RecurringFormSheetState
                     IconButton(
                       onPressed: _saving ? null : _delete,
                       style: IconButton.styleFrom(
-                        backgroundColor: AppColors.error.withValues(alpha: 0.1),
-                        foregroundColor: AppColors.error,
+                        backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                        foregroundColor: Theme.of(context).colorScheme.error,
                         padding: const EdgeInsets.all(14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -682,7 +684,7 @@ class _RecurringFormSheetState
                     child: FilledButton(
                       onPressed: _saving ? null : _submit,
                       style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.tertiary,
+                        backgroundColor: Theme.of(context).colorScheme.tertiary,
                         padding: const EdgeInsets.symmetric(
                             vertical: AppSpacing.md),
                         shape: RoundedRectangleBorder(
@@ -700,7 +702,7 @@ class _RecurringFormSheetState
                                   ? 'Save Changes'
                                   : 'Create Recurring',
                               style: AppTypography.labelLarge
-                                  .copyWith(color: AppColors.onTertiary),
+                                  .copyWith(color: Theme.of(context).colorScheme.onTertiary),
                             ),
                     ),
                   ),
@@ -716,9 +718,9 @@ class _RecurringFormSheetState
   InputDecoration _inputDecoration(String hint) => InputDecoration(
         hintText: hint,
         hintStyle: AppTypography.bodyMedium
-            .copyWith(color: AppColors.outlineVariant),
+            .copyWith(color: Theme.of(context).colorScheme.outlineVariant),
         filled: true,
-        fillColor: AppColors.surfaceContainerLow,
+        fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -763,7 +765,7 @@ class _RecurringFormSheetState
     final amount = double.tryParse(amountStr);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid amount.')));
+          SnackBar(content: Text('Please enter a valid amount.')));
       return;
     }
 
@@ -793,7 +795,7 @@ class _RecurringFormSheetState
     } on Failure catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message), backgroundColor: AppColors.error));
+            SnackBar(content: Text(e.message), backgroundColor: Theme.of(context).colorScheme.error));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -804,7 +806,7 @@ class _RecurringFormSheetState
     final confirm = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: AppColors.surfaceContainerLowest,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text('Delete "${widget.existing!.title}"?',
@@ -812,22 +814,22 @@ class _RecurringFormSheetState
             content: Text(
               'This recurring transaction will be permanently removed.',
               style: AppTypography.bodySmall
-                  .copyWith(color: AppColors.onSurfaceVariant),
+                  .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
                 child: Text('Keep',
                     style: AppTypography.labelLarge
-                        .copyWith(color: AppColors.onSurfaceVariant)),
+                        .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ),
               FilledButton(
                 style:
-                    FilledButton.styleFrom(backgroundColor: AppColors.error),
+                    FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
                 onPressed: () => Navigator.of(ctx).pop(true),
                 child: Text('Delete',
                     style: AppTypography.labelLarge
-                        .copyWith(color: AppColors.onError)),
+                        .copyWith(color: Theme.of(context).colorScheme.onError)),
               ),
             ],
           ),
@@ -842,9 +844,9 @@ class _RecurringFormSheetState
       if (mounted) Navigator.of(context).pop();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Failed to delete.'),
-            backgroundColor: AppColors.error));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: const Text('Failed to delete.'),
+            backgroundColor: Theme.of(context).colorScheme.error));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -876,17 +878,17 @@ class _TypeChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? color.withValues(alpha: 0.12)
-              : AppColors.surfaceContainerLow,
+              : Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: selected ? color : AppColors.outlineVariant,
+            color: selected ? color : Theme.of(context).colorScheme.outlineVariant,
             width: selected ? 1.5 : 1,
           ),
         ),
         child: Text(
           label,
           style: AppTypography.labelMedium.copyWith(
-            color: selected ? color : AppColors.onSurfaceVariant,
+            color: selected ? color : Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),

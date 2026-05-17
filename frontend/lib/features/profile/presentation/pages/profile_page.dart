@@ -648,9 +648,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       child: ElevatedButton(
         onPressed: loading ? null : onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF3861FB),
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: const Color(0xFF3861FB).withValues(alpha: 0.6),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          disabledBackgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           elevation: 0,
         ),

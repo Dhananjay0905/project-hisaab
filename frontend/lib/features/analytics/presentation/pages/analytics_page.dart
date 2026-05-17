@@ -76,7 +76,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
     final ym = _isCurrentMonth ? (null, null) : (_year, _month) as YearMonth;
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         child: CustomScrollView(
@@ -84,12 +84,12 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
           slivers: [
             SliverAppBar(
               pinned: true,
-              backgroundColor: AppColors.surface,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               leading: const BackButton(),
               title: Text('Analytics',
                   style: AppTypography.titleLarge.copyWith(
-                      color: AppColors.onSurface, fontWeight: FontWeight.w700)),
+                      color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700)),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
@@ -134,9 +134,9 @@ class _MonthSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.md),
-        boxShadow: AppColors.softShadow,
+        boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.softShadow : AppColors.softShadow,
       ),
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
@@ -145,18 +145,18 @@ class _MonthSelector extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.chevron_left_rounded),
             onPressed: onPrev,
-            color: AppColors.onSurface,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           Expanded(
             child: Text(label,
                 textAlign: TextAlign.center,
                 style: AppTypography.titleSmall.copyWith(
-                    fontWeight: FontWeight.w700, color: AppColors.onSurface)),
+                    fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right_rounded),
             onPressed: onNext,
-            color: onNext != null ? AppColors.onSurface : AppColors.outlineVariant,
+            color: onNext != null ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.outlineVariant,
           ),
         ],
       ),
@@ -173,7 +173,7 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(title,
       style: AppTypography.titleMedium.copyWith(
-          color: AppColors.onSurface, fontWeight: FontWeight.w700));
+          color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700));
 }
 
 // ─── Donut + breakdown section ────────────────────────────────────────────────
@@ -266,9 +266,9 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
       // ── Donut card ─────────────────────────────────────────────────────────
       Container(
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
+          color: Theme.of(context).colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(AppSpacing.md),
-          boxShadow: AppColors.softShadow,
+          boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.softShadow : AppColors.softShadow,
         ),
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(children: [
@@ -298,10 +298,10 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(centerTop,
                       style: AppTypography.titleMedium.copyWith(
-                          fontWeight: FontWeight.w800, color: AppColors.onSurface)),
+                          fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
                   Text(centerBottom,
                       style: AppTypography.labelSmall
-                          .copyWith(color: AppColors.onSurfaceVariant),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       overflow: TextOverflow.ellipsis),
                 ]),
               ),
@@ -335,9 +335,9 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
       // ── Category breakdown list ─────────────────────────────────────────────
       Container(
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
+          color: Theme.of(context).colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(AppSpacing.md),
-          boxShadow: AppColors.softShadow,
+          boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.softShadow : AppColors.softShadow,
         ),
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md, vertical: AppSpacing.sm),
@@ -347,14 +347,14 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
             child: Row(children: [
               Text('Category Breakdown',
                   style: AppTypography.titleSmall.copyWith(
-                      fontWeight: FontWeight.w700, color: AppColors.onSurface)),
+                      fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
               const Spacer(),
               Text('${cats.length} categories',
                   style: AppTypography.labelSmall
-                      .copyWith(color: AppColors.onSurfaceVariant)),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ]),
           ),
-          const Divider(height: 1, color: AppColors.surfaceContainer),
+          Divider(height: 1, color: Theme.of(context).colorScheme.surfaceContainer),
           const SizedBox(height: AppSpacing.xs),
           for (int i = 0; i < cats.length; i++) ...[
             _CategoryBreakdownRow(
@@ -367,8 +367,8 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
               fmtCompact: fmtC,
             ),
             if (i < cats.length - 1)
-              const Divider(height: 1, indent: 52,
-                  color: AppColors.surfaceContainer),
+              Divider(height: 1, indent: 52,
+                  color: Theme.of(context).colorScheme.surfaceContainer),
           ],
           const SizedBox(height: AppSpacing.xs),
         ]),
@@ -400,7 +400,7 @@ class _PillLegend extends StatelessWidget {
             border: Border.all(
               color: isActive
                   ? color
-                  : AppColors.outlineVariant.withValues(alpha: 0.4),
+                  : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
               width: isActive ? 1.5 : 1,
             ),
           ),
@@ -410,7 +410,7 @@ class _PillLegend extends StatelessWidget {
             const SizedBox(width: 5),
             Text(label,
                 style: AppTypography.labelSmall.copyWith(
-                    color: isActive ? color : AppColors.onSurfaceVariant,
+                    color: isActive ? color : Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight:
                         isActive ? FontWeight.w600 : FontWeight.w400)),
           ]),
@@ -464,7 +464,7 @@ class _CategoryBreakdownRow extends ConsumerWidget {
               Expanded(
                 child: Text(category.name,
                     style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.onSurface,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600),
                     overflow: TextOverflow.ellipsis),
               ),
@@ -475,14 +475,14 @@ class _CategoryBreakdownRow extends ConsumerWidget {
               ],
               Text('${(pct * 100).toStringAsFixed(1)}%',
                   style: AppTypography.labelSmall.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500)),
             ]),
             const SizedBox(height: 5),
             LayoutBuilder(builder: (context, constraints) => Stack(children: [
               Container(height: 6, width: constraints.maxWidth,
                   decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
+                      color: Theme.of(context).colorScheme.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(4))),
               AnimatedContainer(
                   duration: const Duration(milliseconds: 600),
@@ -498,18 +498,18 @@ class _CategoryBreakdownRow extends ConsumerWidget {
               Text(
                 '${fmtCompact.format(category.spent)} / ${fmtCompact.format(category.limit!)} limit',
                 style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.onSurfaceVariant, fontSize: 10),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10),
               )
             else
               Text('of ${fmt.format(total)} total',
                   style: AppTypography.labelSmall.copyWith(
-                      color: AppColors.onSurfaceVariant, fontSize: 10)),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
           ]),
         ),
         const SizedBox(width: AppSpacing.sm),
         Text(fmtCompact.format(category.spent),
             style: AppTypography.labelMedium.copyWith(
-                color: AppColors.onSurface, fontWeight: FontWeight.w700)),
+                color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700)),
       ]),
     );
   }
@@ -591,9 +591,9 @@ class _BarChartCard extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.md),
-        boxShadow: AppColors.softShadow,
+        boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.softShadow : AppColors.softShadow,
       ),
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.sm, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
@@ -612,7 +612,7 @@ class _BarChartCard extends ConsumerWidget {
               show: true, drawVerticalLine: false,
               horizontalInterval: maxY / 4,
               getDrawingHorizontalLine: (_) =>
-                  FlLine(color: AppColors.surfaceContainer, strokeWidth: 1),
+                  FlLine(color: Theme.of(context).colorScheme.surfaceContainer, strokeWidth: 1),
             ),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
@@ -622,7 +622,7 @@ class _BarChartCard extends ConsumerWidget {
                 showTitles: true, reservedSize: 52,
                 getTitlesWidget: (val, _) => Text(fmt.format(val),
                     style: AppTypography.labelSmall.copyWith(
-                        color: AppColors.onSurfaceVariant, fontSize: 9)),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9)),
               )),
               bottomTitles: AxisTitles(sideTitles: SideTitles(
                 showTitles: true,
@@ -633,7 +633,7 @@ class _BarChartCard extends ConsumerWidget {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(months[idx].month,
                         style: AppTypography.labelSmall.copyWith(
-                            color: AppColors.onSurfaceVariant, fontSize: 9)),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 9)),
                   );
                 },
               )),
@@ -669,7 +669,7 @@ class _LegendDot extends StatelessWidget {
             decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 4),
         Text(label, style: AppTypography.labelSmall
-            .copyWith(color: AppColors.onSurfaceVariant)),
+            .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
       ]);
 }
 
@@ -685,7 +685,7 @@ class _EmptyState extends StatelessWidget {
         child: Center(
           child: Text(message,
               style: AppTypography.bodyMedium
-                  .copyWith(color: AppColors.onSurfaceVariant),
+                  .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center),
         ),
       );

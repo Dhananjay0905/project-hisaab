@@ -12,6 +12,7 @@ abstract interface class AuthRepository {
     required String email,
     required String password,
     required double openingBalance,
+    required bool policyAccepted,
   });
 
   /// Verify email using the token from the email link.
@@ -20,8 +21,8 @@ abstract interface class AuthRepository {
   /// Resend verification email.
   Future<void> resendVerificationEmail(String email);
 
-  /// Login with email + password. Returns authenticated [User].
-  Future<User> login({
+  /// Login with email + password. Returns authenticated [User] and accountRecovered flag.
+  Future<({User user, bool accountRecovered})> login({
     required String email,
     required String password,
   });
@@ -56,9 +57,16 @@ abstract interface class AuthRepository {
     required String newPassword,
   });
 
+  /// Schedule account deletion in 5 days. Revokes all sessions.
+  /// Returns the scheduled deletion date.
+  Future<DateTime> deleteAccount(String password);
+
   /// Returns true if a refresh token exists in local storage.
   Future<bool> hasValidSession();
 
   /// Restore user from locally cached session data (no network call).
   Future<User?> getCachedUser();
+
+  /// Accept the Privacy Policy and Terms of Service.
+  Future<void> acceptPolicy();
 }

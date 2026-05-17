@@ -15,6 +15,7 @@ class AuthRemoteDataSource {
     required String email,
     required String password,
     required double openingBalance,
+    required bool policyAccepted,
   }) async {
     await _client.post(ApiEndpoints.register, data: {
       'name': name,
@@ -23,6 +24,7 @@ class AuthRemoteDataSource {
       'currency': 'INR',
       'currencySymbol': '₹',
       'openingBalance': openingBalance,
+      'policyAccepted': policyAccepted,
     });
   }
 
@@ -34,7 +36,7 @@ class AuthRemoteDataSource {
     await _client.post(ApiEndpoints.resendVerification, data: {'email': email});
   }
 
-  /// Returns [UserModel] and token map: { user, accessToken, refreshToken }
+  /// Returns [UserModel] and token map: { user, accessToken, refreshToken, accountRecovered }
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -48,6 +50,7 @@ class AuthRemoteDataSource {
       'user': UserModel.fromJson(payload['user'] as Map<String, dynamic>),
       'accessToken': payload['accessToken'] as String,
       'refreshToken': payload['refreshToken'] as String,
+      'accountRecovered': payload['accountRecovered'] as bool? ?? false,
     };
   }
 
@@ -105,5 +108,20 @@ class AuthRemoteDataSource {
       'currentPassword': currentPassword,
       'newPassword': newPassword,
     });
+  }
+
+  /// Schedules the account for deletion in 5 days. Returns scheduledDeleteAt.
+  Future<DateTime> deleteAccount(String password) async {
+    final response = await _client.delete<Map<String, dynamic>>(
+      ApiEndpoints.deleteAccount,
+      data: {'password': password},
+    );
+    final payload = response.data!['data'] as Map<String, dynamic>;
+    return DateTime.parse(payload['scheduledDeleteAt'] as String);
+  }
+
+  /// Accept the Privacy Policy and Terms of Service.
+  Future<void> acceptPolicy() async {
+    await _client.post(ApiEndpoints.acceptPolicy);
   }
 }

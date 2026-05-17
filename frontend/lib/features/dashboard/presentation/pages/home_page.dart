@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../../../../core/providers/theme_mode_provider.dart';
 import '../../../../core/theme/semantic_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../dashboard/domain/entities/summary.dart';
@@ -28,11 +29,18 @@ String _greeting() {
   return 'Good evening,';
 }
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  bool _hasShownRecoveryBanner = false;
+
+  @override
+  Widget build(BuildContext context) {
     final summaryAsync = ref.watch(dashboardSummaryProvider);
     final userAsync = ref.watch(authNotifierProvider);
     final userName = userAsync.valueOrNull is AuthAuthenticated
@@ -43,10 +51,45 @@ class HomePage extends ConsumerWidget {
                 .first
         : 'there';
 
+    final themeMode = ref.watch(themeModeProvider);
+    final cs = Theme.of(context).colorScheme;
+
+    // Show recovery banner exactly once per session
+    final authState = userAsync.valueOrNull;
+    if (!_hasShownRecoveryBanner &&
+        authState is AuthAuthenticated &&
+        authState.accountRecovered) {
+      _hasShownRecoveryBanner = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Account deletion cancelled. Welcome back!',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF16A34A),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      });
+    }
+
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: cs.surface,
       body: RefreshIndicator(
-        color: AppColors.primary,
+        color: cs.primary,
         onRefresh: () => ref.read(dashboardSummaryProvider.notifier).refresh(),
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(
@@ -55,12 +98,34 @@ class HomePage extends ConsumerWidget {
           slivers: [
             // ── App Bar (pinned — status bar always has a solid background) ──
             SliverAppBar(
-              backgroundColor: AppColors.surface,
+              backgroundColor: cs.surface,
               surfaceTintColor: Colors.transparent,
               pinned: true,
               elevation: 0,
               expandedHeight: 100,
               title: Text('Hisaab', style: AppTypography.titleLarge),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: IconButton(
+                    icon: Icon(
+                      switch (themeMode) {
+                        ThemeMode.light  => Icons.light_mode_rounded,
+                        ThemeMode.dark   => Icons.dark_mode_rounded,
+                        ThemeMode.system => Icons.brightness_auto_rounded,
+                      },
+                      color: cs.onSurfaceVariant,
+                    ),
+                    tooltip: switch (themeMode) {
+                      ThemeMode.light  => 'Light mode',
+                      ThemeMode.dark   => 'Dark mode',
+                      ThemeMode.system => 'System mode',
+                    },
+                    onPressed: () =>
+                        ref.read(themeModeProvider.notifier).cycle(),
+                  ),
+                ),
+              ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Padding(
                   padding: EdgeInsets.only(
@@ -75,7 +140,7 @@ class HomePage extends ConsumerWidget {
                       child: Text(
                         '${_greeting()} $userName 👋',
                         style: AppTypography.bodyMedium
-                            .copyWith(color: AppColors.onSurfaceVariant),
+                            .copyWith(color: cs.onSurfaceVariant),
                       ),
                     ),
                   ),
@@ -186,11 +251,11 @@ class _BalanceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: AppColors.heroCardGradient,
+        gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.heroCardGradient : AppColors.heroCardGradient,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.35),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -373,8 +438,8 @@ class _MonthStatsRow extends StatelessWidget {
                 label: 'Txns',
                 value: summary.thisMonth.transactionCount.toString(),
                 icon: Icons.receipt_long_rounded,
-                accentColor: AppColors.primary,
-                bgColor: AppColors.surfaceContainerLow,
+                accentColor: Theme.of(context).colorScheme.primary,
+                bgColor: Theme.of(context).colorScheme.surfaceContainerLow,
               ),
             ),
           ],
@@ -416,13 +481,13 @@ class _StatCard extends StatelessWidget {
             value,
             style: AppTypography.titleSmall.copyWith(
               fontWeight: FontWeight.w700,
-              color: AppColors.onSurface,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           Text(
             label,
             style: AppTypography.labelSmall.copyWith(
-              color: AppColors.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -450,7 +515,7 @@ class _SectionHeader extends StatelessWidget {
             onPressed: onSeeAll,
             child: Text(
               'See all',
-              style: AppTypography.labelMedium.copyWith(color: AppColors.primary),
+              style: AppTypography.labelMedium.copyWith(color: Theme.of(context).colorScheme.primary),
             ),
           ),
       ],
@@ -466,11 +531,12 @@ class _RecentTransactionsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.softShadow,
+        boxShadow: isDark ? AppColorsDark.softShadow : AppColors.softShadow,
       ),
       child: Column(
         children: transactions
@@ -557,7 +623,7 @@ class _TransactionTile extends StatelessWidget {
                           ? '${tx.categoryName} · ${_dateLabel(tx.date)}'
                           : _dateLabel(tx.date),
                       style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.onSurfaceVariant),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -580,7 +646,7 @@ class _TransactionTile extends StatelessWidget {
             thickness: 1,
             indent: AppSpacing.md + 44 + AppSpacing.md,
             endIndent: AppSpacing.md,
-            color: AppColors.surfaceContainerLow,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
           ),
       ],
     );
@@ -597,11 +663,12 @@ class _TopCategoriesList extends StatelessWidget {
   Widget build(BuildContext context) {
     final fmt =
         NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: AppColors.softShadow,
+        boxShadow: isDark ? AppColorsDark.softShadow : AppColors.softShadow,
       ),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -636,7 +703,7 @@ class _TopCategoriesList extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: (cat.percentage / 100).clamp(0.0, 1.0),
-                          backgroundColor: AppColors.surfaceContainerLow,
+                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
                           color: SemanticColors.of(context).cashOut,
                           minHeight: 5,
                         ),
@@ -648,7 +715,7 @@ class _TopCategoriesList extends StatelessWidget {
                 Text(
                   '${cat.percentage.toStringAsFixed(0)}%',
                   style: AppTypography.labelSmall
-                      .copyWith(color: AppColors.onSurfaceVariant),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -666,10 +733,10 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.only(top: 120),
+    return Padding(
+      padding: const EdgeInsets.only(top: 120),
       child: Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
+        child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
       ),
     );
   }
@@ -687,15 +754,15 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 60),
-          const Icon(Icons.cloud_off_rounded,
-              size: 56, color: AppColors.outlineVariant),
+          Icon(Icons.cloud_off_rounded,
+              size: 56, color: Theme.of(context).colorScheme.outlineVariant),
           const SizedBox(height: AppSpacing.md),
           Text('Could not load data', style: AppTypography.titleSmall),
           const SizedBox(height: AppSpacing.xs),
           Text(
             message,
             style: AppTypography.bodySmall
-                .copyWith(color: AppColors.onSurfaceVariant),
+                .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),

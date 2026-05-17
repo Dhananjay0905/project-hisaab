@@ -14,6 +14,7 @@ class UserModel extends User {
     required super.openingBalance,
     super.monthlyBudget,
     required super.createdAt,
+    super.policyAcceptedAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +30,9 @@ class UserModel extends User {
           ? _parseDouble(json['monthlyBudget'])
           : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      policyAcceptedAt: json['policyAcceptedAt'] != null
+          ? DateTime.parse(json['policyAcceptedAt'] as String)
+          : null,
     );
   }
 
@@ -42,6 +46,7 @@ class UserModel extends User {
         'openingBalance': openingBalance,
         'monthlyBudget': monthlyBudget,
         'createdAt': createdAt.toIso8601String(),
+        'policyAcceptedAt': policyAcceptedAt?.toIso8601String(),
       };
 
   static double _parseDouble(dynamic value) {

@@ -16,6 +16,7 @@ import '../../../../core/constants/app_typography.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/category.dart';
 import '../providers/categories_provider.dart';
+import '../../../../../../../../../../core/theme/semantic_colors.dart';
 
 class CategoriesPage extends ConsumerWidget {
   const CategoriesPage({super.key});
@@ -25,7 +26,7 @@ class CategoriesPage extends ConsumerWidget {
     final asyncCategories = ref.watch(categoriesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(categoriesProvider);
@@ -33,19 +34,19 @@ class CategoriesPage extends ConsumerWidget {
             await ref.read(categoriesProvider.future);
           } catch (_) {}
         },
-        color: AppColors.primary,
-        backgroundColor: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
           SliverAppBar(
             pinned: true,
-            backgroundColor: AppColors.surface,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             surfaceTintColor: Colors.transparent,
             title: Text(
               'Categories',
               style: AppTypography.titleLarge.copyWith(
-                  color: AppColors.onSurface, fontWeight: FontWeight.w700),
+                  color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700),
             ),
           ),
           asyncCategories.when(
@@ -56,7 +57,7 @@ class CategoriesPage extends ConsumerWidget {
               child: Center(
                 child: Text('Failed to load categories',
                     style: AppTypography.bodyMedium
-                        .copyWith(color: AppColors.onSurfaceVariant)),
+                        .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ),
             ),
             data: (categories) {
@@ -75,15 +76,15 @@ class CategoriesPage extends ConsumerWidget {
                     _CategorySection(
                       title: 'Income',
                       categories: income,
-                      accentColor: AppColors.cashIn,
-                      accentContainer: AppColors.cashInContainer,
+                      accentColor: SemanticColors.of(context).cashIn,
+                      accentContainer: SemanticColors.of(context).cashInContainer,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     _CategorySection(
                       title: 'Expense',
                       categories: expense,
-                      accentColor: AppColors.cashOut,
-                      accentContainer: AppColors.cashOutContainer,
+                      accentColor: SemanticColors.of(context).cashOut,
+                      accentContainer: SemanticColors.of(context).cashOutContainer,
                     ),
                   ]),
                 ),
@@ -95,8 +96,8 @@ class CategoriesPage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddSheet(context, ref),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.onPrimary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add_rounded),
         label: Text('Add Category', style: AppTypography.labelLarge),
       ),
@@ -139,7 +140,7 @@ class _CategorySection extends StatelessWidget {
           child: Text(
             title.toUpperCase(),
             style: AppTypography.labelSmall.copyWith(
-              color: AppColors.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               letterSpacing: 1.2,
             ),
           ),
@@ -148,24 +149,24 @@ class _CategorySection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(AppSpacing.md),
-              boxShadow: AppColors.softShadow,
+              boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.softShadow : AppColors.softShadow,
             ),
             child: Center(
               child: Text(
                 'No ${title.toLowerCase()} categories yet.',
                 style: AppTypography.bodySmall
-                    .copyWith(color: AppColors.onSurfaceVariant),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
           )
         else
           Container(
             decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(AppSpacing.md),
-              boxShadow: AppColors.softShadow,
+              boxShadow: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.softShadow : AppColors.softShadow,
             ),
             clipBehavior: Clip.antiAlias,
             child: Column(
@@ -177,10 +178,10 @@ class _CategorySection extends StatelessWidget {
                     accentContainer: accentContainer,
                   ),
                   if (i < categories.length - 1)
-                    const Divider(
+                    Divider(
                         height: 1,
                         indent: 60,
-                        color: AppColors.surfaceContainer),
+                        color: Theme.of(context).colorScheme.surfaceContainer),
                 ],
               ],
             ),
@@ -239,7 +240,7 @@ class _CategoryRow extends ConsumerWidget {
                         child: Text(
                           category.name,
                           style: AppTypography.titleSmall
-                              .copyWith(color: AppColors.onSurface),
+                              .copyWith(color: Theme.of(context).colorScheme.onSurface),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -251,7 +252,7 @@ class _CategoryRow extends ConsumerWidget {
                       child: Text(
                         'Limit: ₹${category.monthlyLimit!.toStringAsFixed(0)}/mo',
                         style: AppTypography.labelSmall.copyWith(
-                          color: AppColors.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -270,20 +271,20 @@ class _CategoryRow extends ConsumerWidget {
                       child: Icon(
                         Icons.bar_chart_outlined,
                         size: 16,
-                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
                 IconButton(
                   icon: const Icon(Icons.edit_rounded, size: 18),
-                  color: AppColors.onSurfaceVariant,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   onPressed: () => _showEditSheet(context, ref),
                   visualDensity: VisualDensity.compact,
                 ),
                 if (!category.isDefault)
                   IconButton(
                     icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                    color: AppColors.error,
+                    color: Theme.of(context).colorScheme.error,
                     onPressed: () => _confirmDelete(context, ref),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -308,7 +309,7 @@ class _CategoryRow extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceContainerLowest,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Delete "${category.name}"?',
             style: AppTypography.titleMedium),
@@ -316,17 +317,17 @@ class _CategoryRow extends ConsumerWidget {
           'This category will be permanently removed. '
           'Any transactions linked to it will remain, but will no longer have a category.',
           style: AppTypography.bodySmall
-              .copyWith(color: AppColors.onSurfaceVariant),
+              .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text('Cancel',
                 style: AppTypography.labelLarge
-                    .copyWith(color: AppColors.onSurfaceVariant)),
+                    .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
             onPressed: () async {
               Navigator.of(ctx).pop();
               try {
@@ -338,7 +339,7 @@ class _CategoryRow extends ConsumerWidget {
                     SnackBar(
                       content:
                           Text('${category.emoji} ${category.name} deleted'),
-                      backgroundColor: AppColors.onSurface,
+                      backgroundColor: Theme.of(context).colorScheme.onSurface,
                     ),
                   );
                 }
@@ -347,7 +348,7 @@ class _CategoryRow extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(e.message),
-                      backgroundColor: AppColors.error,
+                      backgroundColor: Theme.of(context).colorScheme.error,
                     ),
                   );
                 }
@@ -355,7 +356,7 @@ class _CategoryRow extends ConsumerWidget {
             },
             child: Text('Delete',
                 style: AppTypography.labelLarge
-                    .copyWith(color: AppColors.onError)),
+                    .copyWith(color: Theme.of(context).colorScheme.onError)),
           ),
         ],
       ),
@@ -412,8 +413,8 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       margin: EdgeInsets.only(bottom: bottom),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Padding(
@@ -429,7 +430,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
+                  color: Theme.of(context).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -459,7 +460,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                       hintText: '😀',
                       hintStyle: const TextStyle(fontSize: 28),
                       filled: true,
-                      fillColor: AppColors.surfaceContainerLow,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -477,9 +478,9 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                     decoration: InputDecoration(
                       hintText: 'Category name',
                       hintStyle: AppTypography.bodyMedium
-                          .copyWith(color: AppColors.outlineVariant),
+                          .copyWith(color: Theme.of(context).colorScheme.outlineVariant),
                       filled: true,
-                      fillColor: AppColors.surfaceContainerLow,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -502,14 +503,14 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                   _TypeChip(
                     label: 'Expense',
                     selected: _selectedType == 'EXPENSE',
-                    color: AppColors.cashOut,
+                    color: SemanticColors.of(context).cashOut,
                     onTap: () => setState(() => _selectedType = 'EXPENSE'),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   _TypeChip(
                     label: 'Income',
                     selected: _selectedType == 'INCOME',
-                    color: AppColors.cashIn,
+                    color: SemanticColors.of(context).cashIn,
                     onTap: () => setState(() => _selectedType = 'INCOME'),
                   ),
                 ],
@@ -530,12 +531,12 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                   hintText: 'e.g. 5000',
                   prefixText: '₹ ',
                   hintStyle: AppTypography.bodyMedium
-                      .copyWith(color: AppColors.outlineVariant),
+                      .copyWith(color: Theme.of(context).colorScheme.outlineVariant),
                   helperText: 'Set a spending cap for this category this month.',
                   helperStyle: AppTypography.labelSmall
-                      .copyWith(color: AppColors.onSurfaceVariant),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   filled: true,
-                  fillColor: AppColors.surfaceContainerLow,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -553,7 +554,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
             // ── Exclude from analytics ──────────────────────────────────────
             Container(
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: SwitchListTile(
@@ -562,15 +563,15 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
                 title: Text(
                   'Exclude from analytics',
                   style: AppTypography.bodyMedium
-                      .copyWith(color: AppColors.onSurface),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurface),
                 ),
                 subtitle: Text(
                   'Transactions in this category won\'t count toward totals or charts.',
                   style: AppTypography.labelSmall
-                      .copyWith(color: AppColors.onSurfaceVariant),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 value: _excludeFromAnalytics,
-                activeThumbColor: AppColors.primary,
+                activeThumbColor: Theme.of(context).colorScheme.primary,
                 onChanged: (v) => setState(() => _excludeFromAnalytics = v),
               ),
             ),
@@ -582,22 +583,22 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
               child: FilledButton(
                 onPressed: _saving ? null : _submit,
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _saving
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary),
                       )
                     : Text(
                         _isEditing ? 'Save Changes' : 'Create Category',
                         style: AppTypography.labelLarge
-                            .copyWith(color: AppColors.onPrimary),
+                            .copyWith(color: Theme.of(context).colorScheme.onPrimary),
                       ),
               ),
             ),
@@ -612,7 +613,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
     final emoji = _emojiController.text.trim();
     if (name.isEmpty || emoji.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in both name and emoji.')),
+        SnackBar(content: Text('Please fill in both name and emoji.')),
       );
       return;
     }
@@ -624,7 +625,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
       monthlyLimit = double.tryParse(limitText);
       if (monthlyLimit == null || monthlyLimit < 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Monthly limit must be a valid positive number.')),
+          SnackBar(content: Text('Monthly limit must be a valid positive number.')),
         );
         return;
       }
@@ -654,7 +655,7 @@ class _CategoryFormSheetState extends State<_CategoryFormSheet> {
     } on Failure catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: AppColors.error),
+          SnackBar(content: Text(e.message), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     } finally {
@@ -688,17 +689,17 @@ class _TypeChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? color.withValues(alpha: 0.12)
-              : AppColors.surfaceContainerLow,
+              : Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: selected ? color : AppColors.outlineVariant,
+            color: selected ? color : Theme.of(context).colorScheme.outlineVariant,
             width: selected ? 1.5 : 1,
           ),
         ),
         child: Text(
           label,
           style: AppTypography.labelMedium.copyWith(
-            color: selected ? color : AppColors.onSurfaceVariant,
+            color: selected ? color : Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),

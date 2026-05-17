@@ -31,6 +31,7 @@ const {
   sendPasswordResetEmail,
   sendEmailChangeConfirmation,
   sendNewEmailVerification,
+  sendAccountDeletionEmail,
 } = require('../utils/email');
 
 const prisma = new PrismaClient();
@@ -52,7 +53,7 @@ const RESET_EXPIRY_HOURS = 1;
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 
-async function register({ name, email, password, currency, currencySymbol, openingBalance }) {
+async function register({ name, email, password, currency, currencySymbol, openingBalance, policyAccepted }) {
   // 1. Check duplicate email
   const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
   if (existing) {
@@ -80,6 +81,8 @@ async function register({ name, email, password, currency, currencySymbol, openi
         currencySymbol: currencySymbol || '$',
         // Stored as plain Decimal — no encryption needed
         openingBalance: parseFloat(openingBalance ?? 0),
+        // Record policy acceptance timestamp if user checked the box during registration
+        policyAcceptedAt: policyAccepted ? new Date() : null,
       },
     });
 
@@ -184,6 +187,16 @@ async function login({ email, password }) {
     );
   }
 
+  // ── Grace-period recovery: cancel scheduled deletion on re-login ──────────
+  let accountRecovered = false;
+  if (user.scheduledDeleteAt) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { scheduledDeleteAt: null },
+    });
+    accountRecovered = true;
+  }
+
   // Issue tokens
   const accessToken = signAccessToken({ id: user.id, email: user.email });
   const refreshTokenValue = generateRefreshToken();
@@ -207,6 +220,7 @@ async function login({ email, password }) {
     accessToken,
     refreshToken: refreshTokenValue,
     user: _formatUser(user),
+    accountRecovered,  // frontend shows recovery banner when true
   };
 }
 
@@ -264,6 +278,53 @@ async function logout(refreshTokenValue) {
       data: { revokedAt: new Date() },
     })
     .catch(() => { }); // Silently ignore if token doesn't exist
+}
+
+// ─── Schedule Account Deletion ────────────────────────────────────────────────
+
+const DELETION_GRACE_DAYS = 5;
+
+/**
+ * Marks the account for deletion in 5 days and revokes all sessions.
+ * If the user logs in before the deadline, deletion is cancelled.
+ */
+async function scheduleAccountDeletion(userId, password) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw createError('User not found.', 404, 'NOT_FOUND');
+
+  // Verify password
+  const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+  if (!passwordMatches) {
+    throw createError('Incorrect password. Please try again.', 400, 'INVALID_CREDENTIALS');
+  }
+
+  const scheduledDeleteAt = new Date(
+    Date.now() + DELETION_GRACE_DAYS * 24 * 60 * 60 * 1000
+  );
+
+  await prisma.$transaction([
+    // Schedule the deletion
+    prisma.user.update({
+      where: { id: userId },
+      data: { scheduledDeleteAt },
+    }),
+    // Revoke ALL sessions — forces logout everywhere
+    prisma.refreshToken.updateMany({
+      where: { userId },
+      data: { revokedAt: new Date() },
+    }),
+  ]);
+
+  // Send deletion notification email (non-blocking)
+  sendAccountDeletionEmail({
+    name: user.name,
+    email: user.email,
+    deleteAt: scheduledDeleteAt,
+  }).catch((err) => {
+    console.error('[AUTH] Failed to send deletion email:', err.message);
+  });
+
+  return { scheduledDeleteAt, message: `Your account is scheduled for deletion on ${scheduledDeleteAt.toDateString()}.` };
 }
 
 // ─── Forgot Password ──────────────────────────────────────────────────────────
@@ -498,6 +559,23 @@ function _formatUser(user) {
   };
 }
 
+// ─── Accept Policy ───────────────────────────────────────────────────────────
+
+/**
+ * Records that the user has accepted the current Privacy Policy and ToS.
+ * Called either explicitly (existing user, acceptance gate) or at registration
+ * (new user who ticked the checkbox).
+ *
+ * @param {string} userId
+ */
+async function acceptPolicy(userId) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { policyAcceptedAt: new Date() },
+  });
+  return { message: 'Privacy Policy and Terms of Service accepted.' };
+}
+
 module.exports = {
   register,
   verifyEmail,
@@ -513,4 +591,6 @@ module.exports = {
   confirmEmailChange,
   verifyNewEmail,
   changePassword,
+  scheduleAccountDeletion,
+  acceptPolicy,
 };

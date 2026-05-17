@@ -107,7 +107,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
   Widget build(BuildContext context, ) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(gradient: Theme.of(context).brightness == Brightness.dark ? AppColorsDark.backgroundGradient : AppColors.backgroundGradient),
         child: Center(
           child: AnimatedBuilder(
             animation: _logoController,
@@ -132,13 +132,13 @@ class _SplashPageState extends ConsumerState<SplashPage>
                               borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primary
+                                  color: Theme.of(context).colorScheme.primary
                                       .withValues(alpha: 0.18 * pulse),
                                   blurRadius: 40 * pulse,
                                   spreadRadius: 4 * pulse,
                                 ),
                                 BoxShadow(
-                                  color: AppColors.primaryContainer
+                                  color: Theme.of(context).colorScheme.primaryContainer
                                       .withValues(alpha: 0.12 * pulse),
                                   blurRadius: 60 * pulse,
                                   spreadRadius: 8 * pulse,
@@ -171,7 +171,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                         'Hisaab',
                         style: AppTypography.headlineLarge.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -192,9 +192,9 @@ class _SplashPageState extends ConsumerState<SplashPage>
                             shaderCallback: (bounds) {
                               return LinearGradient(
                                 colors: [
-                                  AppColors.onSurfaceVariant,
-                                  AppColors.primary.withValues(alpha: 0.8),
-                                  AppColors.onSurfaceVariant,
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
                                 ],
                                 stops: const [0.0, 0.5, 1.0],
                                 begin: Alignment(-1.5 + 3.0 * _shimmerController.value, 0),
@@ -277,7 +277,7 @@ class _AnimatedDotsState extends State<_AnimatedDots>
                   height: 8,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.primary.withValues(alpha: 0.4 + 0.6 * bounce),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4 + 0.6 * bounce),
                   ),
                 ),
               ),

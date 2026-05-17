@@ -4,13 +4,11 @@
 
 const { Router } = require('express');
 const { body } = require('express-validator');
-const { requireAuth } = require('../middleware/authMiddleware');
 const ctrl = require('../controllers/splits.controller');
 
 const router = Router();
 
 // All routes require auth
-router.use(requireAuth);
 
 // ── Validation chains ─────────────────────────────────────────────────────────
 

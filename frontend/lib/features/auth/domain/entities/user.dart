@@ -13,6 +13,7 @@ class User extends Equatable {
   final double openingBalance;
   final double? monthlyBudget;
   final DateTime createdAt;
+  final DateTime? policyAcceptedAt;
 
   const User({
     required this.id,
@@ -24,6 +25,7 @@ class User extends Equatable {
     required this.openingBalance,
     this.monthlyBudget,
     required this.createdAt,
+    this.policyAcceptedAt,
   });
 
   User copyWith({
@@ -36,6 +38,7 @@ class User extends Equatable {
     double? openingBalance,
     double? monthlyBudget,
     DateTime? createdAt,
+    DateTime? policyAcceptedAt,
   }) {
     return User(
       id: id ?? this.id,
@@ -47,6 +50,7 @@ class User extends Equatable {
       openingBalance: openingBalance ?? this.openingBalance,
       monthlyBudget: monthlyBudget ?? this.monthlyBudget,
       createdAt: createdAt ?? this.createdAt,
+      policyAcceptedAt: policyAcceptedAt ?? this.policyAcceptedAt,
     );
   }
 
@@ -61,5 +65,6 @@ class User extends Equatable {
         openingBalance,
         monthlyBudget,
         createdAt,
+        policyAcceptedAt,
       ];
 }

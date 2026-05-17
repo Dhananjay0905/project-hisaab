@@ -17,7 +17,11 @@ import '../features/auth/presentation/pages/register_page.dart';
 import '../features/auth/presentation/pages/reset_password_page.dart';
 import '../features/auth/presentation/pages/splash_page.dart';
 import '../features/auth/presentation/pages/verify_email_page.dart';
+import '../features/auth/presentation/pages/account_deletion_scheduled_page.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
+import '../features/legal/presentation/pages/policy_acceptance_page.dart';
+import '../features/legal/presentation/pages/privacy_policy_page.dart';
+import '../features/legal/presentation/pages/terms_of_service_page.dart';
 import '../features/categories/presentation/pages/categories_page.dart';
 import '../features/dashboard/presentation/pages/home_page.dart';
 import '../features/more/presentation/pages/more_page.dart';
@@ -103,6 +107,10 @@ class _RouterNotifier extends ChangeNotifier {
         loc.startsWith('/forgot-password') ||
         loc.startsWith('/reset-password');
 
+    // Legal viewer routes are always accessible (linked from acceptance page)
+    final isLegalRoute = loc.startsWith('/privacy-policy') ||
+        loc.startsWith('/terms-of-service');
+
     if (auth == null || auth is AuthUnauthenticated) {
       return isAuthRoute ? null : '/login';
     }
@@ -116,9 +124,21 @@ class _RouterNotifier extends ChangeNotifier {
       return loc.startsWith('/verify-email') ? null : '/verify-email';
     }
 
+    if (auth is AuthAccountDeletionScheduled) {
+      return loc.startsWith('/account-deletion-scheduled') ? null : '/account-deletion-scheduled';
+    }
+
+    // Policy not yet accepted — gate the user until they accept
+    if (auth is AuthPolicyPending) {
+      if (loc.startsWith('/accept-policy') || isLegalRoute) return null;
+      return '/accept-policy';
+    }
+
     if (auth is AuthAuthenticated) {
-      // Leave splash/auth routes, send to home
-      if (loc == '/splash' || isAuthRoute) return '/home';
+      // Leave splash, auth routes, and the policy gate, send to home
+      if (loc == '/splash' || isAuthRoute || loc.startsWith('/accept-policy')) {
+        return '/home';
+      }
       return null;
     }
 
@@ -176,6 +196,38 @@ final routerProvider = Provider<GoRouter>((ref) {
           state,
           ResetPasswordPage(token: state.uri.queryParameters['token'] ?? ''),
         ),
+      ),
+      GoRoute(
+        path: '/account-deletion-scheduled',
+        pageBuilder: (context, state) {
+          // Read the deletion date from the live auth state
+          final authState = ProviderScope.containerOf(context)
+              .read(authNotifierProvider)
+              .valueOrNull;
+          final deleteAt = authState is AuthAccountDeletionScheduled
+              ? authState.scheduledDeleteAt
+              : DateTime.now().add(const Duration(days: 5));
+          return _authSlideTransition(
+            state,
+            AccountDeletionScheduledPage(scheduledDeleteAt: deleteAt),
+          );
+        },
+      ),
+      // ── Legal routes (viewer + acceptance gate) ───────────────────────────────
+      GoRoute(
+        path: '/accept-policy',
+        pageBuilder: (_, state) =>
+            _authSlideTransition(state, const PolicyAcceptancePage()),
+      ),
+      GoRoute(
+        path: '/privacy-policy',
+        pageBuilder: (_, state) =>
+            _authSlideTransition(state, const PrivacyPolicyPage()),
+      ),
+      GoRoute(
+        path: '/terms-of-service',
+        pageBuilder: (_, state) =>
+            _authSlideTransition(state, const TermsOfServicePage()),
       ),
 
       GoRoute(

@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
@@ -80,7 +79,7 @@ class _DuesPageState extends ConsumerState<DuesPage>
       body: Stack(
         children: [
           RefreshIndicator(
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
             onRefresh: () async {
               ref.invalidate(duesProvider);
               ref.invalidate(duesSummaryProvider);
@@ -264,8 +263,8 @@ class _DuesPageState extends ConsumerState<DuesPage>
             bottom: MediaQuery.of(context).padding.bottom + 12,
             child: FloatingActionButton.extended(
               onPressed: isSplitsTab ? _openAddSplit : _openAddDue,
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               icon: const Icon(Icons.add_rounded),
               label: Text(isSplitsTab ? 'New Split' : 'Add Due'),
               elevation: 6,
@@ -298,7 +297,7 @@ class _DuesPageState extends ConsumerState<DuesPage>
                     value: logAsTransaction,
                     onChanged: (v) =>
                         setState(() => logAsTransaction = v ?? false),
-                    activeColor: AppColors.primary,
+                    activeColor: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(width: 4),
                   Expanded(

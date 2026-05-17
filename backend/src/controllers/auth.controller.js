@@ -7,6 +7,24 @@ const { body, query } = require('express-validator');
 const authService = require('../services/auth.service');
 const { sendSuccess, sendError } = require('../utils/response');
 const { validate } = require('../middleware/validate');
+const { recordFailedAttempt, clearFailedAttempts } = require('../middleware/bruteForce');
+
+// ── Security helper ───────────────────────────────────────────────────────────
+
+/**
+ * Escapes special HTML characters to prevent reflected XSS in HTML responses.
+ * Used only for the browser-facing email verification pages.
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
 
 // ─── Validation Chains ────────────────────────────────────────────────────────
 
@@ -90,6 +108,11 @@ const changePasswordValidation = [
   validate,
 ];
 
+const deleteAccountValidation = [
+  body('password').notEmpty().withMessage('Password is required to delete your account.'),
+  validate,
+];
+
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
 /**
@@ -119,12 +142,15 @@ async function verifyEmail(req, res, next) {
     await authService.verifyEmail(token);
     
     return res.send(
-      '<html><body style="font-family:sans-serif;text-align:center;padding:60px;color:#28a745;"><h2>✅ Email Verified!</h2><p>Your email address has been successfully verified. You can now close this window and return to the Expensio app.</p></body></html>'
+      '<html><body style="font-family:sans-serif;text-align:center;padding:60px;color:#28a745;"><h2>✅ Email Verified!</h2><p>Your email address has been successfully verified. You can now close this window and return to the Hisaab app.</p></body></html>'
     );
   } catch (err) {
-    const message = err.message || 'An error occurred during verification. The token might be invalid or expired.';
+    // escapeHtml prevents reflected XSS from any error message content
+    const safeMessage = escapeHtml(
+      err.message || 'An error occurred during verification. The token might be invalid or expired.'
+    );
     return res.status(400).send(
-      `<html><body style="font-family:sans-serif;text-align:center;padding:60px;color:#d9534f;"><h2>❌ Verification Failed</h2><p>${message}</p></body></html>`
+      `<html><body style="font-family:sans-serif;text-align:center;padding:60px;color:#d9534f;"><h2>❌ Verification Failed</h2><p>${safeMessage}</p></body></html>`
     );
   }
 }
@@ -147,8 +173,23 @@ async function resendVerification(req, res, next) {
 async function login(req, res, next) {
   try {
     const result = await authService.login(req.body);
+    // Successful login — clear any brute-force lockout for this IP
+    clearFailedAttempts(req.ip);
     return sendSuccess(res, result);
   } catch (err) {
+    // Increment brute-force counter only for credential/auth errors.
+    // Validation errors (422) and server errors (5xx) are not counted
+    // so legitimate typo-correction attempts aren't penalised unfairly.
+    const isCredentialError = !err.statusCode || err.statusCode === 401 || err.statusCode === 403;
+    if (isCredentialError) {
+      const { count, lockedUntil, lockoutMs } = recordFailedAttempt(req.ip);
+      if (lockoutMs > 0) {
+        const retryAfterSecs = Math.ceil(lockoutMs / 1000);
+        res.setHeader('Retry-After', retryAfterSecs);
+        // Augment the error with backoff info before passing to the error handler
+        err._backoff = { count, retryAfter: retryAfterSecs };
+      }
+    }
     return next(err);
   }
 }
@@ -286,6 +327,32 @@ async function changePassword(req, res, next) {
   }
 }
 
+/**
+ * DELETE /api/auth/delete-account   [protected]
+ */
+async function deleteAccount(req, res, next) {
+  try {
+    const result = await authService.scheduleAccountDeletion(req.user.id, req.body.password);
+    return sendSuccess(res, result);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/**
+ * POST /api/auth/accept-policy
+ * Requires: requireAuth (user must be logged in)
+ * Does NOT require requirePolicy (that would create a catch-22).
+ */
+async function acceptPolicy(req, res, next) {
+  try {
+    const result = await authService.acceptPolicy(req.user.id);
+    return sendSuccess(res, result);
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   register,
   registerValidation,
@@ -309,4 +376,7 @@ module.exports = {
   verifyNewEmail,
   changePassword,
   changePasswordValidation,
+  deleteAccount,
+  deleteAccountValidation,
+  acceptPolicy,
 };

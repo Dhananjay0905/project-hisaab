@@ -114,6 +114,24 @@ async function sendDueReminderEmail({ name, email, dueTitle, amount, dueDate }) 
   return getClient().sendTransacEmail(sendSmtpEmail);
 }
 
+/**
+ * Sends an account deletion scheduled email with grace period info.
+ * @param {{ name: string, email: string, deleteAt: Date }} opts
+ */
+async function sendAccountDeletionEmail({ name, email, deleteAt }) {
+  const deleteDate = deleteAt.toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+  sendSmtpEmail.sender = SENDER;
+  sendSmtpEmail.to = [{ email, name }];
+  sendSmtpEmail.subject = 'Your Hisaab account is scheduled for deletion';
+  sendSmtpEmail.htmlContent = _accountDeletionTemplate({ name, deleteDate });
+
+  return getClient().sendTransacEmail(sendSmtpEmail);
+}
+
 // ─── HTML templates ───────────────────────────────────────────────────────────
 
 function _baseTemplate(content) {
@@ -211,6 +229,28 @@ function _dueReminderTemplate({ name, dueTitle, amount, dueDate }) {
   `);
 }
 
+function _accountDeletionTemplate({ name, deleteDate }) {
+  return _baseTemplate(`
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="display:inline-block;background:#FEF2F2;border-radius:50%;width:64px;height:64px;line-height:64px;font-size:32px;">🗑️</div>
+    </div>
+    <h2 style="margin:0 0 8px;font-size:22px;color:#2C2F33;font-weight:700;">Account deletion scheduled</h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#595C60;line-height:1.6;">
+      Hi ${name}, your Hisaab account has been scheduled for permanent deletion.
+    </p>
+    <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0;font-size:13px;color:#991B1B;font-weight:600;">⚠️ Your account and all data will be permanently deleted on:</p>
+      <p style="margin:8px 0 0;font-size:22px;font-weight:800;color:#DC2626;">${deleteDate}</p>
+    </div>
+    <p style="margin:0 0 24px;font-size:15px;color:#595C60;line-height:1.6;">
+      Changed your mind? Simply <strong>log in to Hisaab before that date</strong> and your account will be fully restored — no questions asked.
+    </p>
+    <p style="margin:0;font-size:13px;color:#ABABB2;">
+      If you did not request account deletion, please log in immediately and change your password. Your account is safe until the date above.
+    </p>
+  `);
+}
+
 function _emailChangeConfirmTemplate({ name, url }) {
   return _baseTemplate(`
     <h2 style="margin:0 0 8px;font-size:22px;color:#2C2F33;font-weight:700;">Confirm email change ✉️</h2>
@@ -257,4 +297,5 @@ module.exports = {
   sendDueReminderEmail,
   sendEmailChangeConfirmation,
   sendNewEmailVerification,
+  sendAccountDeletionEmail,
 };

@@ -9,12 +9,10 @@
 
 const { Router } = require('express');
 const { body } = require('express-validator');
-const { requireAuth } = require('../middleware/authMiddleware');
 const { validate } = require('../middleware/validate');
 const savingsController = require('../controllers/savings.controller');
 
 const router = Router();
-router.use(requireAuth);
 
 const updateValidators = [
   body('totalAmount')

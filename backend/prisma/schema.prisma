@@ -55,6 +55,8 @@ model User {
   monthlyBudget       Decimal?  @db.Decimal(15, 2)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  scheduledDeleteAt   DateTime?             // Set on deletion request; cleared on re-login
+  policyAcceptedAt    DateTime?             // Null until user explicitly accepts PP & ToS
 
   // Relations
   refreshTokens       RefreshToken[]

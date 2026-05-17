@@ -8,7 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
@@ -67,8 +66,8 @@ class _AddDuePageState extends ConsumerState<AddDuePage>
       duration: const Duration(milliseconds: 300),
     );
     _accentAnimation = ColorTween(
-      begin: AppColors.cashOut, // I_OWE = red
-      end: AppColors.cashIn,   // THEY_OWE = green
+      begin: SemanticColors.of(context).cashOut, // I_OWE = red
+      end: SemanticColors.of(context).cashIn,   // THEY_OWE = green
     ).animate(CurvedAnimation(parent: _typeAnimController, curve: Curves.easeInOut));
 
     if (_type == 'THEY_OWE') _typeAnimController.forward();
@@ -174,7 +173,7 @@ class _AddDuePageState extends ConsumerState<AddDuePage>
     return AnimatedBuilder(
       animation: _accentAnimation,
       builder: (context, _) {
-        final accent = _accentAnimation.value ?? AppColors.cashOut;
+        final accent = _accentAnimation.value ?? SemanticColors.of(context).cashOut;
         return Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
           body: CustomScrollView(
@@ -554,7 +553,7 @@ class _DatePickerTile extends StatelessWidget {
               Icons.calendar_today_rounded,
               size: 20,
               color: hasDate
-                  ? AppColors.primary
+                  ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 12),
@@ -573,8 +572,8 @@ class _DatePickerTile extends StatelessWidget {
             if (hasDate)
               GestureDetector(
                 onTap: onClear,
-                child: const Icon(Icons.close_rounded,
-                    size: 18, color: AppColors.onSurfaceVariant),
+                child: Icon(Icons.close_rounded,
+                    size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
           ],
         ),
@@ -631,7 +630,7 @@ class _DueCategoryRowState extends ConsumerState<_DueCategoryRow> {
       }
     }
 
-    final accent = widget.type == 'I_OWE' ? AppColors.cashOut : AppColors.cashIn;
+    final accent = widget.type == 'I_OWE' ? SemanticColors.of(context).cashOut : SemanticColors.of(context).cashIn;
 
     if (categories.isEmpty) {
       return const SizedBox(

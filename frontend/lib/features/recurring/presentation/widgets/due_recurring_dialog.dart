@@ -9,11 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../domain/entities/recurring_transaction.dart';
 import '../providers/recurring_provider.dart';
+import '../../../../../../../../../../core/theme/semantic_colors.dart';
 
 class DueRecurringDialog extends ConsumerStatefulWidget {
   const DueRecurringDialog({super.key, required this.item});
@@ -31,14 +31,14 @@ class _DueRecurringDialogState extends ConsumerState<DueRecurringDialog> {
   Widget build(BuildContext context) {
     final item = widget.item;
     final isExpense = item.isExpense;
-    final accentColor = isExpense ? AppColors.cashOut : AppColors.cashIn;
+    final accentColor = isExpense ? SemanticColors.of(context).cashOut : SemanticColors.of(context).cashIn;
     final accentContainer =
-        isExpense ? AppColors.cashOutContainer : AppColors.cashInContainer;
+        isExpense ? SemanticColors.of(context).cashOutContainer : SemanticColors.of(context).cashInContainer;
     final fmt = NumberFormat('#,##0.00', 'en_IN');
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: const EdgeInsets.fromLTRB(
@@ -52,7 +52,7 @@ class _DueRecurringDialogState extends ConsumerState<DueRecurringDialog> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.outlineVariant,
+                color: Theme.of(context).colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -106,13 +106,13 @@ class _DueRecurringDialogState extends ConsumerState<DueRecurringDialog> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLow,
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   item.frequencyLabel,
                   style: AppTypography.labelMedium
-                      .copyWith(color: AppColors.onSurfaceVariant),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ),
             ],
@@ -123,7 +123,7 @@ class _DueRecurringDialogState extends ConsumerState<DueRecurringDialog> {
           Text(
             'Your recurring ${isExpense ? 'expense' : 'income'} is due today.\nWould you like to add it now?',
             style: AppTypography.bodyMedium
-                .copyWith(color: AppColors.onSurfaceVariant),
+                .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -137,13 +137,13 @@ class _DueRecurringDialogState extends ConsumerState<DueRecurringDialog> {
                       _loading ? null : () => Navigator.of(context).pop(),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                    side: const BorderSide(color: AppColors.outlineVariant),
+                    side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Text('Later',
                       style: AppTypography.labelLarge
-                          .copyWith(color: AppColors.onSurfaceVariant)),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -151,7 +151,7 @@ class _DueRecurringDialogState extends ConsumerState<DueRecurringDialog> {
                 child: FilledButton(
                   onPressed: _loading ? null : _confirm,
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -165,7 +165,7 @@ class _DueRecurringDialogState extends ConsumerState<DueRecurringDialog> {
                         )
                       : Text('Add Now',
                           style: AppTypography.labelLarge
-                              .copyWith(color: AppColors.onPrimary)),
+                              .copyWith(color: Colors.white)),
                 ),
               ),
             ],
@@ -184,16 +184,16 @@ class _DueRecurringDialogState extends ConsumerState<DueRecurringDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${widget.item.title} added to transactions!'),
-            backgroundColor: AppColors.cashIn,
+            backgroundColor: SemanticColors.of(context).cashIn,
           ),
         );
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
               content: Text('Failed to add transaction. Try again.'),
-              backgroundColor: AppColors.error),
+              backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     } finally {

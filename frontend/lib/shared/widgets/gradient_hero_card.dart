@@ -10,33 +10,39 @@ class GradientHeroCard extends StatelessWidget {
   const GradientHeroCard({
     super.key,
     required this.child,
-    this.gradient = AppColors.heroCardGradient,
+    this.gradient,
     this.padding,
     this.height,
     this.borderRadius,
   });
 
   final Widget child;
-  final Gradient gradient;
+  final Gradient? gradient;
   final EdgeInsetsGeometry? padding;
   final double? height;
   final double? borderRadius;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveGradient = gradient ??
+        (isDark ? AppColorsDark.heroCardGradient : AppColors.heroCardGradient);
+
     return Container(
       height: height,
       decoration: BoxDecoration(
-        gradient: gradient,
+        gradient: effectiveGradient,
         borderRadius:
             BorderRadius.circular(borderRadius ?? AppRadius.xl2),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.25),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
+      boxShadow: isDark
+          ? AppColorsDark.cardShadow
+          : [
+              BoxShadow(
+                color: const Color(0xFF3861FB).withValues(alpha: 0.25),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
       ),
       child: Padding(
         padding: padding ??
@@ -95,8 +101,8 @@ class _ShimmerBoxState extends State<ShimmerBox>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(widget.radius),
           color: Color.lerp(
-            AppColors.surfaceContainerLow,
-            AppColors.surfaceContainerHigh,
+            Theme.of(context).colorScheme.surfaceContainerLow,
+            Theme.of(context).colorScheme.surfaceContainerHigh,
             _anim.value,
           ),
         ),

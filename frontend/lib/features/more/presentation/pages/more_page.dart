@@ -11,6 +11,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/providers/colorblind_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/error/failures.dart';
 
 class MorePage extends ConsumerWidget {
   const MorePage({super.key});
@@ -18,18 +19,18 @@ class MorePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: CustomScrollView(
         slivers: [
           // ── App Bar ──────────────────────────────────────────────────────
           SliverAppBar(
             pinned: true,
-            backgroundColor: AppColors.surface,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             surfaceTintColor: Colors.transparent,
             title: Text(
               'More',
               style: AppTypography.titleLarge
-                  .copyWith(color: AppColors.onSurface, fontWeight: FontWeight.w700),
+                  .copyWith(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700),
             ),
           ),
 
@@ -49,7 +50,7 @@ class MorePage extends ConsumerWidget {
                   items: [
                     _MenuItem(
                       icon: Icons.savings_rounded,
-                      iconColor: AppColors.secondary,
+                      iconColor: Theme.of(context).colorScheme.secondary,
                       label: 'Savings',
                       subtitle: 'Track your savings pot',
                       onTap: () => context.push('/savings'),
@@ -63,7 +64,7 @@ class MorePage extends ConsumerWidget {
                     ),
                     _MenuItem(
                       icon: Icons.repeat_rounded,
-                      iconColor: AppColors.tertiary,
+                      iconColor: Theme.of(context).colorScheme.tertiary,
                       label: 'Recurring',
                       subtitle: 'Subscriptions & regular payments',
                       onTap: () => context.push('/recurring'),
@@ -91,7 +92,7 @@ class MorePage extends ConsumerWidget {
                   items: [
                     _MenuItem(
                       icon: Icons.label_rounded,
-                      iconColor: AppColors.primary,
+                      iconColor: Theme.of(context).colorScheme.primary,
                       label: 'Categories',
                       subtitle: 'Add or remove categories',
                       onTap: () => context.push('/categories'),
@@ -105,7 +106,7 @@ class MorePage extends ConsumerWidget {
                   items: [
                     _ToggleMenuItem(
                       icon: Icons.palette_rounded,
-                      iconColor: AppColors.primary,
+                      iconColor: Theme.of(context).colorScheme.primary,
                       label: 'Colorblind Mode',
                       subtitle: 'Switches income/expense to blue & orange',
                       value: ref.watch(colorblindProvider),
@@ -121,7 +122,7 @@ class MorePage extends ConsumerWidget {
                   items: [
                     _MenuItem(
                       icon: Icons.person_rounded,
-                      iconColor: AppColors.primary,
+                      iconColor: Theme.of(context).colorScheme.primary,
                       label: 'Profile & Settings',
                       subtitle: 'Edit name and account details',
                       onTap: () => context.push('/profile'),
@@ -163,6 +164,13 @@ class MorePage extends ConsumerWidget {
                         }
                       },
                     ),
+                    _MenuItem(
+                      icon: Icons.delete_forever_rounded,
+                      iconColor: const Color(0xFFDC2626),
+                      label: 'Delete Account',
+                      subtitle: '5-day grace period before permanent deletion',
+                      onTap: () => _showDeleteAccountSheet(context, ref),
+                    ),
                   ],
                 ),
               ]),
@@ -170,6 +178,271 @@ class MorePage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Delete Account Bottom Sheet ─────────────────────────────────────────────
+
+Future<void> _showDeleteAccountSheet(BuildContext context, WidgetRef ref) async {
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _DeleteAccountSheet(ref: ref),
+  );
+}
+
+class _DeleteAccountSheet extends StatefulWidget {
+  const _DeleteAccountSheet({required this.ref});
+  final WidgetRef ref;
+
+  @override
+  State<_DeleteAccountSheet> createState() => _DeleteAccountSheetState();
+}
+
+class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorText;
+  bool _obscure = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final pw = _passwordController.text.trim();
+    if (pw.isEmpty) {
+      setState(() => _errorText = 'Password is required.');
+      return;
+    }
+    setState(() { _isLoading = true; _errorText = null; });
+    try {
+      await widget.ref
+          .read(authNotifierProvider.notifier)
+          .scheduleAccountDeletion(pw);
+      if (mounted) Navigator.pop(context);
+    } on ServerFailure catch (e) {
+      setState(() { _isLoading = false; _errorText = e.message; });
+    } catch (_) {
+      setState(() {
+        _isLoading = false;
+        _errorText = 'Something went wrong. Please try again.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: keyboardHeight),
+      child: Container(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLowest,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: cs.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // ── Warning header ─────────────────────────────────────────────
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: cs.errorContainer.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.delete_forever_rounded, color: cs.error, size: 24),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Delete Account',
+                          style: AppTypography.titleMedium.copyWith(
+                            color: cs.error,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          '5-day grace period — log in to cancel',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // ── Info ───────────────────────────────────────────────────────
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: cs.errorContainer.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: cs.error.withValues(alpha: 0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _BulletPoint(
+                      icon: Icons.schedule_rounded,
+                      text: 'Your account will be deleted in 5 days',
+                      color: cs.onSurface,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    _BulletPoint(
+                      icon: Icons.restore_rounded,
+                      text: 'Log in before the deadline to cancel deletion',
+                      color: const Color(0xFF16A34A),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    _BulletPoint(
+                      icon: Icons.warning_amber_rounded,
+                      text: 'All data is permanently erased after the deadline',
+                      color: cs.error,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // ── Password field ─────────────────────────────────────────────
+              Text(
+                'Enter your password to confirm',
+                style: AppTypography.labelMedium.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscure,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Password',
+                  errorText: _errorText,
+                  filled: true,
+                  fillColor: cs.surfaceContainer,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded),
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                  ),
+                ),
+                onChanged: (_) {
+                  if (_errorText != null) setState(() => _errorText = null);
+                },
+                onSubmitted: (_) => _submit(),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // ── Buttons ───────────────────────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isLoading ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: _isLoading ? null : _submit,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.error,
+                        foregroundColor: cs.onError,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: cs.onError,
+                              ),
+                            )
+                          : const Text('Delete Account'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xs),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Bullet Point ─────────────────────────────────────────────────────────────
+
+class _BulletPoint extends StatelessWidget {
+  const _BulletPoint({required this.icon, required this.text, required this.color});
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            text,
+            style: AppTypography.bodySmall.copyWith(color: color),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -187,7 +460,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: AppTypography.labelSmall.copyWith(
-          color: AppColors.onSurfaceVariant,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           letterSpacing: 1.2,
         ),
       ),
@@ -205,9 +478,11 @@ class _MenuCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.md),
-        boxShadow: AppColors.softShadow,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? AppColorsDark.softShadow
+            : AppColors.softShadow,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -215,7 +490,7 @@ class _MenuCard extends StatelessWidget {
           for (int i = 0; i < items.length; i++) ...[
             items[i],
             if (i < items.length - 1)
-              const Divider(height: 1, indent: 56, color: AppColors.surfaceContainer),
+              Divider(height: 1, indent: 56, color: Theme.of(context).colorScheme.surfaceContainer),
           ],
         ],
       ),
@@ -269,17 +544,17 @@ class _MenuItem extends StatelessWidget {
                 children: [
                   Text(label,
                       style: AppTypography.titleSmall
-                          .copyWith(color: AppColors.onSurface)),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurface)),
                   if (subtitle != null)
                     Text(subtitle!,
                         style: AppTypography.bodySmall
-                            .copyWith(color: AppColors.onSurfaceVariant)),
+                            .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ],
               ),
             ),
             // Chevron
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.outlineVariant, size: 20),
+            Icon(Icons.chevron_right_rounded,
+                color: Theme.of(context).colorScheme.outlineVariant, size: 20),
           ],
         ),
       ),
@@ -333,11 +608,11 @@ class _ToggleMenuItem extends StatelessWidget {
               children: [
                 Text(label,
                     style: AppTypography.titleSmall
-                        .copyWith(color: AppColors.onSurface)),
+                        .copyWith(color: Theme.of(context).colorScheme.onSurface)),
                 if (subtitle != null)
                   Text(subtitle!,
                       style: AppTypography.bodySmall
-                          .copyWith(color: AppColors.onSurfaceVariant)),
+                          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ],
             ),
           ),
@@ -345,7 +620,7 @@ class _ToggleMenuItem extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onToggle,
-            activeThumbColor: AppColors.primary,
+            activeThumbColor: Theme.of(context).colorScheme.primary,
           ),
         ],
       ),

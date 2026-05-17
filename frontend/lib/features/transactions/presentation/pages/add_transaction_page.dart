@@ -16,7 +16,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
@@ -88,8 +87,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
       duration: const Duration(milliseconds: 300),
     );
     _accentAnimation = ColorTween(
-      begin: AppColors.cashOut,
-      end: AppColors.cashIn,
+      begin: Colors.red,   // placeholder — overwritten in didChangeDependencies()
+      end: Colors.green,   // placeholder — overwritten in didChangeDependencies()
     ).animate(CurvedAnimation(parent: _typeAnimController, curve: Curves.easeInOut));
     if (_type == 'INCOME') _typeAnimController.forward();
     _amountController.addListener(() => setState(() {}));
@@ -227,7 +226,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Delete'),
           ),
         ],
@@ -279,12 +278,12 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
     return AnimatedBuilder(
       animation: _accentAnimation,
       builder: (context, _) {
-        final accentColor = _accentAnimation.value ?? AppColors.cashOut;
+        final accentColor = _accentAnimation.value ?? SemanticColors.of(context).cashOut;
         return Scaffold(
           backgroundColor: Colors.transparent,
           body: Container(
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
             child: SafeArea(
@@ -298,7 +297,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: AppColors.outlineVariant,
+                        color: Theme.of(context).colorScheme.outlineVariant,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -321,8 +320,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                             icon: const Icon(Icons.delete_outline_rounded),
                             onPressed: _isSubmitting ? null : _deleteTransaction,
                             style: IconButton.styleFrom(
-                              backgroundColor: AppColors.error.withValues(alpha: 0.1),
-                              foregroundColor: AppColors.error,
+                              backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                              foregroundColor: Theme.of(context).colorScheme.error,
                               padding: const EdgeInsets.all(8),
                             ),
                           ),
@@ -331,7 +330,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                           icon: const Icon(Icons.close_rounded),
                           onPressed: () => Navigator.of(context).pop(),
                           style: IconButton.styleFrom(
-                            backgroundColor: AppColors.surfaceContainer,
+                            backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
                             padding: const EdgeInsets.all(8),
                           ),
                         ),
@@ -371,7 +370,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                           if (categories.isNotEmpty) ...[
                             Text('Category',
                                 style: AppTypography.labelMedium.copyWith(
-                                    color: AppColors.onSurfaceVariant)),
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
                             const SizedBox(height: AppSpacing.sm),
                             _CategoryPicker(
                               categories: categories,
@@ -383,7 +382,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                             const SizedBox(height: AppSpacing.xs),
                             Text('You can manage your categories from the Settings page.',
                                 style: AppTypography.bodySmall.copyWith(
-                                    color: AppColors.onSurfaceVariant.withValues(alpha: 0.6))),
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6))),
                             const SizedBox(height: AppSpacing.sm),
                             // Budget warning banner
                             _BudgetWarningBanner(
@@ -443,12 +442,12 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                             return Container(
                               decoration: BoxDecoration(
                                 color: catExcluded
-                                    ? AppColors.surfaceContainerLow
+                                    ? Theme.of(context).colorScheme.surfaceContainerLow
                                         .withValues(alpha: 0.5)
-                                    : AppColors.surfaceContainerLow,
+                                    : Theme.of(context).colorScheme.surfaceContainerLow,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                    color: AppColors.outlineVariant
+                                    color: Theme.of(context).colorScheme.outlineVariant
                                         .withValues(alpha: 0.5)),
                               ),
                               child: SwitchListTile(
@@ -458,8 +457,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                                   'Exclude from analytics',
                                   style: AppTypography.bodyMedium.copyWith(
                                     color: catExcluded
-                                        ? AppColors.onSurfaceVariant
-                                        : AppColors.onSurface,
+                                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                                        : Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 subtitle: Text(
@@ -467,11 +466,11 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                                       ? 'Controlled by the "${_selectedCategory!.name}" category setting.'
                                       : 'This transaction won\'t count in charts or totals.',
                                   style: AppTypography.labelSmall.copyWith(
-                                      color: AppColors.onSurfaceVariant),
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant),
                                 ),
                                 value: effectiveValue,
                                 activeThumbColor:
-                                    catExcluded ? AppColors.outlineVariant : accentColor,
+                                    catExcluded ? Theme.of(context).colorScheme.outlineVariant : accentColor,
                                 // null disables the switch widget
                                 onChanged: catExcluded
                                     ? null
@@ -489,7 +488,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                               child: Text(
                                 _errorMessage!,
                                 style: AppTypography.bodySmall
-                                    .copyWith(color: AppColors.error),
+                                    .copyWith(color: Theme.of(context).colorScheme.error),
                               ),
                             ),
 
@@ -525,20 +524,25 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                                   ),
                                 ),
                                 child: _isSubmitting
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         width: 22,
                                         height: 22,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2.5,
-                                          color: Colors.white,
+                                          color: ThemeData.estimateBrightnessForColor(accentColor) == Brightness.dark
+                                              ? Colors.white
+                                              : Colors.black87,
                                         ),
                                       )
                                     : Text(
                                         _type == 'INCOME'
                                             ? 'Add Income'
                                             : 'Add Expense',
-                                        style: AppTypography.labelLarge
-                                            .copyWith(color: Colors.white),
+                                        style: AppTypography.labelLarge.copyWith(
+                                          color: ThemeData.estimateBrightnessForColor(accentColor) == Brightness.dark
+                                              ? Colors.white
+                                              : Colors.black87,
+                                        ),
                                       ),
                               ),
                             ),
@@ -619,7 +623,7 @@ class _TypeToggle extends StatelessWidget {
     final sem = SemanticColors.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.all(4),
@@ -689,7 +693,11 @@ class _TypeOption extends StatelessWidget {
               Text(
                 label,
                 style: AppTypography.labelMedium.copyWith(
-                  color: isActive ? Colors.white : AppColors.onSurfaceVariant,
+                  color: isActive
+                      ? (ThemeData.estimateBrightnessForColor(activeColor) == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87)
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -751,7 +759,7 @@ class _AmountField extends StatelessWidget {
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
                   ],
                   style: AppTypography.displaySmall.copyWith(
-                    color: AppColors.onSurface,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                   decoration: InputDecoration(
@@ -760,7 +768,7 @@ class _AmountField extends StatelessWidget {
                     enabledBorder: InputBorder.none,
                     hintText: '0.00',
                     hintStyle: AppTypography.displaySmall.copyWith(
-                      color: AppColors.outlineVariant,
+                      color: Theme.of(context).colorScheme.outlineVariant,
                       fontWeight: FontWeight.w300,
                     ),
                     isDense: true,
@@ -812,12 +820,12 @@ class _CategoryPicker extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? accentColor
-                    : AppColors.surfaceContainerLow,
+                    : Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected
                       ? accentColor
-                      : AppColors.outlineVariant.withValues(alpha: 0.5),
+                      : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
                 ),
               ),
               child: Row(
@@ -828,7 +836,11 @@ class _CategoryPicker extends StatelessWidget {
                   Text(
                     cat.name,
                     style: AppTypography.labelMedium.copyWith(
-                      color: isSelected ? Colors.white : AppColors.onSurface,
+                      color: isSelected
+                          ? (ThemeData.estimateBrightnessForColor(accentColor) == Brightness.dark
+                              ? Colors.white
+                              : Colors.black87)
+                          : Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -868,7 +880,7 @@ class _FormField extends StatelessWidget {
       children: [
         Text(label,
             style: AppTypography.labelMedium
-                .copyWith(color: AppColors.onSurfaceVariant)),
+                .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
         const SizedBox(height: AppSpacing.xs),
         TextField(
           controller: controller,
@@ -880,18 +892,18 @@ class _FormField extends StatelessWidget {
             prefixIcon: Icon(icon, size: 20),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppColors.outlineVariant),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppColors.outlineVariant),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppColors.outlineVariant, width: 1.5),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant, width: 1.5),
             ),
             filled: true,
-            fillColor: AppColors.surfaceContainerLow,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
@@ -930,14 +942,14 @@ class _DatePicker extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLow,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.outlineVariant),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_rounded, size: 20,
-                color: AppColors.primary),
+            Icon(Icons.calendar_today_rounded, size: 20,
+                color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 10),
             Text(
               _format(date),
@@ -945,8 +957,8 @@ class _DatePicker extends StatelessWidget {
                   .copyWith(fontWeight: FontWeight.w500),
             ),
             const Spacer(),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.outlineVariant),
+            Icon(Icons.chevron_right_rounded,
+                color: Theme.of(context).colorScheme.outlineVariant),
           ],
         ),
       ),
@@ -978,32 +990,32 @@ class _TimePicker extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLow,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.outlineVariant),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Row(
           children: [
             Icon(Icons.access_time_rounded, size: 20,
-                color: hasTime ? AppColors.primary : AppColors.outlineVariant),
+                color: hasTime ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant),
             const SizedBox(width: 10),
             Text(
               _format(time),
               style: AppTypography.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,
-                color: hasTime ? AppColors.onSurface : AppColors.outlineVariant,
+                color: hasTime ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.outlineVariant,
               ),
             ),
             const Spacer(),
             if (hasTime)
               GestureDetector(
                 onTap: onClear,
-                child: const Icon(Icons.close_rounded, size: 18,
-                    color: AppColors.outlineVariant),
+                child: Icon(Icons.close_rounded, size: 18,
+                    color: Theme.of(context).colorScheme.outlineVariant),
               )
             else
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.outlineVariant),
+              Icon(Icons.chevron_right_rounded,
+                  color: Theme.of(context).colorScheme.outlineVariant),
           ],
         ),
       ),
