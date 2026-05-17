@@ -21,6 +21,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../dashboard/domain/entities/summary.dart';
 import '../../../dashboard/presentation/providers/summary_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
+import '../../../../shared/widgets/error_view.dart';
 
 String _greeting() {
   final h = DateTime.now().hour;
@@ -152,11 +153,11 @@ class _HomePageState extends ConsumerState<HomePage> {
             SliverToBoxAdapter(
               child: summaryAsync.when(
                 loading: () => const _LoadingState(),
-                error: (e, _) => _ErrorState(
-                  message: e.toString().replaceAll('Exception:', '').trim(),
-                  onRetry: () =>
-                      ref.read(dashboardSummaryProvider.notifier).refresh(),
-                ),
+                  error: (e, _) => ErrorView(
+                    message: e.toString().replaceAll('Exception:', '').trim(),
+                    onRetry: () =>
+                        ref.read(dashboardSummaryProvider.notifier).refresh(),
+                  ),
                 data: (summary) => _DashboardContent(summary: summary),
               ),
             ),
@@ -742,37 +743,4 @@ class _LoadingState extends StatelessWidget {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Column(
-        children: [
-          const SizedBox(height: 60),
-          Icon(Icons.cloud_off_rounded,
-              size: 56, color: Theme.of(context).colorScheme.outlineVariant),
-          const SizedBox(height: AppSpacing.md),
-          Text('Could not load data', style: AppTypography.titleSmall),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            message,
-            style: AppTypography.bodySmall
-                .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          FilledButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Try again'),
-          ),
-        ],
-      ),
-    );
-  }
 }

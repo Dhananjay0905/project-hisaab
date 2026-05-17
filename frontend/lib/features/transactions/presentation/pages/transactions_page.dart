@@ -8,6 +8,7 @@ import '../../../../core/constants/app_spacing.dart';
 
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
+import '../../../../shared/widgets/error_view.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/providers/categories_provider.dart';
@@ -519,23 +520,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline_rounded,
-                color: Theme.of(context).colorScheme.error, size: 48),
-            const SizedBox(height: 16),
-            Text('Failed to load transactions',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () =>
-                  ref.read(transactionsProvider.notifier).refresh(),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
+      error: (err, stack) => ErrorView(
+        message: err.toString().replaceAll('Exception:', '').trim(),
+        onRetry: () => ref.read(transactionsProvider.notifier).refresh(),
       ),
     );
   }

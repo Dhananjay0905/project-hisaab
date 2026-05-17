@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
+import '../../../../shared/widgets/error_view.dart';
 import '../../domain/entities/due.dart';
 import '../providers/dues_provider.dart';
 import '../../../splits/presentation/providers/splits_provider.dart';
@@ -135,22 +136,9 @@ class _DuesPageState extends ConsumerState<DuesPage>
                       child: Center(child: CircularProgressIndicator()),
                     ),
                     error: (e, _) => SliverFillRemaining(
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.error_outline_rounded,
-                                size: 48, color: SemanticColors.of(context).cashOut),
-                            const SizedBox(height: 12),
-                            Text(e.toString().replaceAll('Exception:', '').trim(),
-                                textAlign: TextAlign.center),
-                            const SizedBox(height: 16),
-                            FilledButton(
-                              onPressed: () => ref.invalidate(duesProvider),
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
+                      child: ErrorView(
+                        message: e.toString().replaceAll('Exception:', '').trim(),
+                        onRetry: () => ref.invalidate(duesProvider),
                       ),
                     ),
                     data: (dues) {
@@ -201,26 +189,9 @@ class _DuesPageState extends ConsumerState<DuesPage>
                       child: Center(child: CircularProgressIndicator()),
                     ),
                     error: (e, _) => SliverFillRemaining(
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.error_outline_rounded,
-                                size: 48, color: SemanticColors.of(context).cashOut),
-                            const SizedBox(height: 12),
-                            Text(
-                                e
-                                    .toString()
-                                    .replaceAll('Exception:', '')
-                                    .trim(),
-                                textAlign: TextAlign.center),
-                            const SizedBox(height: 16),
-                            FilledButton(
-                              onPressed: () => ref.invalidate(splitsProvider),
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
+                      child: ErrorView(
+                        message: e.toString().replaceAll('Exception:', '').trim(),
+                        onRetry: () => ref.invalidate(splitsProvider),
                       ),
                     ),
                     data: (splits) {

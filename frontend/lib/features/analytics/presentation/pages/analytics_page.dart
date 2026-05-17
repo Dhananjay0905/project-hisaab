@@ -11,6 +11,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/providers/colorblind_provider.dart';
 import '../../../../core/theme/semantic_colors.dart';
+import '../../../../shared/widgets/error_view.dart';
 import '../../domain/entities/analytics_entities.dart';
 import '../providers/analytics_provider.dart';
 
@@ -187,7 +188,10 @@ class _CategoryDonutSection extends ConsumerWidget {
     final spendAsync = ref.watch(categorySpendProvider(ym));
     return spendAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => _ErrorBox(message: 'Could not load category data.'),
+      error: (e, _) => ErrorView(
+        message: e.toString().replaceAll('Exception:', '').trim(),
+        onRetry: () => ref.invalidate(categorySpendProvider(ym)),
+      ),
       data: (categories) {
         final relevant = categories.where((c) => c.spent > 0).toList()
           ..sort((a, b) => b.spent.compareTo(a.spent));
@@ -548,7 +552,10 @@ class _MonthlyTrendSection extends ConsumerWidget {
     final trendAsync = ref.watch(monthlyTrendProvider);
     return trendAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => _ErrorBox(message: 'Could not load trend data.'),
+      error: (e, _) => ErrorView(
+        message: e.toString().replaceAll('Exception:', '').trim(),
+        onRetry: () => ref.invalidate(monthlyTrendProvider),
+      ),
       data: (months) {
         if (!months.any((m) => m.income > 0 || m.expense > 0)) {
           return _EmptyState(message: 'No transaction data available yet.');
@@ -691,19 +698,3 @@ class _EmptyState extends StatelessWidget {
       );
 }
 
-class _ErrorBox extends StatelessWidget {
-  const _ErrorBox({required this.message});
-  final String message;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE53935).withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(AppSpacing.sm),
-        ),
-        child: Text(message,
-            style: AppTypography.bodySmall
-                .copyWith(color: const Color(0xFFE53935))),
-      );
-}

@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../../../../shared/widgets/error_view.dart';
 import '../../domain/entities/wishlist_item.dart';
 import '../providers/wishlist_provider.dart';
 
@@ -57,11 +58,10 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (e, _) => SliverFillRemaining(
-                child: Center(
-                    child: Text(
-                  'Failed to load wishlist',
-                  style: AppTypography.bodySmall.copyWith(color: Theme.of(context).colorScheme.error),
-                )),
+                child: ErrorView(
+                  message: e.toString().replaceAll('Exception:', '').trim(),
+                  onRetry: () => ref.read(wishlistProvider.notifier).refresh(),
+                ),
               ),
               data: (items) {
                 if (items.isEmpty) {
