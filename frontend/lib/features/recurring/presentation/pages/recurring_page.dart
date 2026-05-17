@@ -20,7 +20,6 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
 import '../../../../core/error/failures.dart';
-import '../../../../shared/widgets/error_view.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/providers/categories_provider.dart';
 import '../../domain/entities/recurring_transaction.dart';
@@ -64,9 +63,10 @@ class _RecurringPageState extends ConsumerState<RecurringPage> {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (e, _) => SliverFillRemaining(
-                child: ErrorView(
-                  message: e.toString().replaceAll('Exception:', '').trim(),
-                  onRetry: () => ref.read(recurringProvider.notifier).refresh(),
+                child: Center(
+                  child: Text('Failed to load recurring transactions',
+                      style: AppTypography.bodyMedium
+                          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ),
               ),
               data: (items) {

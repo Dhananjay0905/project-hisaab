@@ -10,7 +10,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/theme/semantic_colors.dart';
-import '../../../../shared/widgets/error_view.dart';
 import '../../../wishlist/domain/entities/wishlist_item.dart';
 import '../../../wishlist/presentation/providers/wishlist_provider.dart';
 import '../../domain/entities/savings.dart';
@@ -69,11 +68,9 @@ class _SavingsPageState extends ConsumerState<SavingsPage> {
               loading: () => const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator())),
               error: (e, _) => SliverFillRemaining(
-                child: ErrorView(
-                  message: e.toString().replaceAll('Exception:', '').trim(),
-                  onRetry: () => ref.read(savingsProvider.notifier).refresh(),
-                ),
-              ),
+                  child: Center(
+                      child: Text('Error: $e',
+                          style: TextStyle(color: Theme.of(context).colorScheme.error)))),
               data: (savings) {
                 final wishlistItems = (wishlistAsync.valueOrNull ?? [])
                     .where((i) => !i.isPurchased)
