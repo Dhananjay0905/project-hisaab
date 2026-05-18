@@ -23,7 +23,16 @@ class UpiOcrService {
   /// Processes an image file and returns the parsed UPI transaction data.
   /// Returns a [UpiTransactionData] with all fields null if nothing could be parsed.
   Future<UpiTransactionData> parseScreenshot(String filePath) async {
-    final inputImage = InputImage.fromFile(File(filePath));
+    // ML Kit requires a real file path. Some apps (e.g. GPay) share images
+    // via Android content:// URIs which get translated to a cache file path
+    // by receive_sharing_intent — but we verify the file exists first.
+    final file = File(filePath);
+    if (!await file.exists()) {
+      debugPrint('[UpiOcrService] File not found at path: $filePath');
+      return const UpiTransactionData();
+    }
+
+    final inputImage = InputImage.fromFile(file);
     final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
 
     try {
@@ -34,9 +43,11 @@ class UpiOcrService {
       final amount = _parseAmount(fullText);
       final date = _parseDate(fullText);
       final time = _parseTime(fullText);
-      final isIncome = fullText.toLowerCase().contains('money received') || 
+      final isIncome = fullText.toLowerCase().contains('money received') ||
                        fullText.toLowerCase().contains('received from');
       final merchant = _parseMerchant(fullText, isIncome);
+
+      debugPrint('[UpiOcrService] Parsed => amount: $amount | date: $date | time: $time | merchant: $merchant | isIncome: $isIncome');
 
       return UpiTransactionData(
         amount: amount,

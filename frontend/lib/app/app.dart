@@ -22,6 +22,10 @@ class HisaabApp extends ConsumerStatefulWidget {
 }
 
 class _HisaabAppState extends ConsumerState<HisaabApp> {
+  /// Tracks whether we've already navigated for the current share intent,
+  /// so we don't push the route twice (once from listen, once from build).
+  bool _hasNavigatedForShareIntent = false;
+
   @override
   void initState() {
     super.initState();
@@ -36,23 +40,49 @@ class _HisaabAppState extends ConsumerState<HisaabApp> {
     ref.read(shareIntentProvider.notifier).init();
   }
 
+  /// Attempts to navigate to /add-transaction with the current share intent data.
+  /// Safe to call multiple times — guarded by [_hasNavigatedForShareIntent].
+  void _maybeNavigateForShareIntent(GoRouter router) {
+    if (_hasNavigatedForShareIntent) return;
+
+    final shareState = ref.read(shareIntentProvider);
+    // Still processing OCR — wait for the next state update
+    if (shareState.isProcessing) return;
+    // No data yet (no share intent active)
+    if (shareState.data == null) return;
+
+    final auth = ref.read(authNotifierProvider).valueOrNull;
+    if (auth is! AuthAuthenticated) return;
+
+    _hasNavigatedForShareIntent = true;
+    // Capture data before consuming so AddTransactionPage receives it
+    final data = shareState.data;
+    router.push('/add-transaction', extra: data);
+    // Delay consume until after the route is pushed so the page can read the data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(shareIntentProvider.notifier).consume();
+      _hasNavigatedForShareIntent = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final isColorblind = ref.watch(colorblindProvider);
     final themeMode = ref.watch(themeModeProvider);
 
-    // Navigate to add-transaction whenever a UPI share intent is processed.
-    // We listen here (not in initState) so the router is available.
+    // Listen for share intent state changes (handles: app running in bg, stream delivery)
     ref.listen<ShareIntentState>(shareIntentProvider, (prev, next) {
-      if (next.data != null && prev?.data == null) {
-        // Only navigate if the user is already authenticated
-        final auth = ref.read(authNotifierProvider).valueOrNull;
-        if (auth is AuthAuthenticated) {
-          router.push('/add-transaction', extra: next.data);
-          // Mark as consumed so we don't navigate again on hot-reload / re-listen
-          ref.read(shareIntentProvider.notifier).consume();
-        }
+      if (!next.isProcessing && next.data != null) {
+        _maybeNavigateForShareIntent(router);
+      }
+    });
+
+    // Listen for auth state changes (handles: race condition where OCR finishes
+    // before auth completes — e.g. app cold-started from share intent)
+    ref.listen<AsyncValue<AuthStatus>>(authNotifierProvider, (prev, next) {
+      if (next.valueOrNull is AuthAuthenticated) {
+        _maybeNavigateForShareIntent(router);
       }
     });
 
