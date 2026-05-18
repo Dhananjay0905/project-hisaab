@@ -45,7 +45,7 @@ class _HisaabAppState extends ConsumerState<HisaabApp> {
     // Navigate to add-transaction whenever a UPI share intent is processed.
     // We listen here (not in initState) so the router is available.
     ref.listen<ShareIntentState>(shareIntentProvider, (prev, next) {
-      if (next.hasData && !(prev?.hasData ?? false)) {
+      if (next.data != null && prev?.data == null) {
         // Only navigate if the user is already authenticated
         final auth = ref.read(authNotifierProvider).valueOrNull;
         if (auth is AuthAuthenticated) {
