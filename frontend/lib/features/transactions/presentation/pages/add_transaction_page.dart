@@ -112,7 +112,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
       }
       if (upi.date != null) _selectedDate = upi.date!;
       if (upi.time != null) _selectedTime = upi.time;
-      if (upi.merchantName != null) _titleController.text = upi.merchantName!;
+      // Put the merchant name in the note so the user can write
+      // their own title (e.g. the movie name instead of "PVR INOX Limited").
+      if (upi.merchantName != null) _noteController.text = upi.merchantName!;
       _showUpiBanner = upi.hasAnyData;
     }
 
