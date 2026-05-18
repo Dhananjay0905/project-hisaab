@@ -7,6 +7,8 @@
 ///   - Call [ShareIntentNotifier.consume] after handling to clear state
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
@@ -46,6 +48,8 @@ class ShareIntentState {
 class ShareIntentNotifier extends StateNotifier<ShareIntentState> {
   ShareIntentNotifier() : super(const ShareIntentState());
 
+  StreamSubscription<List<SharedMediaFile>>? _streamSub;
+
   /// Call this once during app startup.
   /// Handles both:
   ///   1. App launched directly FROM a share action (initial intent)
@@ -56,8 +60,10 @@ class ShareIntentNotifier extends StateNotifier<ShareIntentState> {
       if (files.isNotEmpty) _handleSharedFiles(files);
     });
 
-    // Handle share while app is already in foreground/background
-    ReceiveSharingIntent.instance.getMediaStream().listen(
+    // Handle share while app is already in foreground/background.
+    // Store the subscription so we can cancel it on dispose — prevents
+    // stale subscriptions if the provider is ever reset.
+    _streamSub = ReceiveSharingIntent.instance.getMediaStream().listen(
       (files) {
         if (files.isNotEmpty) _handleSharedFiles(files);
       },
@@ -103,10 +109,19 @@ class ShareIntentNotifier extends StateNotifier<ShareIntentState> {
   }
 
   /// Call after the app has consumed the parsed data (e.g. navigation done).
+  ///
+  /// IMPORTANT: We intentionally do NOT call ReceiveSharingIntent.instance.reset()
+  /// here. That method resets the native-side stream, which prevents any future
+  /// share intents from being delivered while the app is still running. Removing
+  /// it means the user can share multiple transactions in a row without restarting.
   void consume() {
     state = const ShareIntentState();
-    // Reset the plugin's intent so it doesn't fire again on re-open
-    ReceiveSharingIntent.instance.reset();
+  }
+
+  @override
+  void dispose() {
+    _streamSub?.cancel();
+    super.dispose();
   }
 }
 
