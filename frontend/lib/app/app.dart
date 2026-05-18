@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/router.dart';
@@ -22,10 +23,6 @@ class HisaabApp extends ConsumerStatefulWidget {
 }
 
 class _HisaabAppState extends ConsumerState<HisaabApp> {
-  /// Tracks whether we've already navigated for the current share intent,
-  /// so we don't push the route twice (once from listen, once from build).
-  bool _hasNavigatedForShareIntent = false;
-
   @override
   void initState() {
     super.initState();
@@ -38,31 +35,25 @@ class _HisaabAppState extends ConsumerState<HisaabApp> {
     ref.read(legalProvider);
     // Start listening for shared images (UPI screenshots from GPay, PhonePe, etc.)
     ref.read(shareIntentProvider.notifier).init();
+
+    // Race-condition fix: if the OCR finishes before the first build() runs
+    // (and ref.listen is registered), we'd miss the state transition.
+    // Check once after the first frame — if data is already there, navigate.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _checkAndNavigateIfPending();
+    });
   }
 
-  /// Attempts to navigate to /add-transaction with the current share intent data.
-  /// Safe to call multiple times — guarded by [_hasNavigatedForShareIntent].
-  void _maybeNavigateForShareIntent(GoRouter router) {
-    if (_hasNavigatedForShareIntent) return;
-
-    final shareState = ref.read(shareIntentProvider);
-    // Still processing OCR — wait for the next state update
-    if (shareState.isProcessing) return;
-    // No data yet (no share intent active)
-    if (shareState.data == null) return;
-
-    final auth = ref.read(authNotifierProvider).valueOrNull;
-    if (auth is! AuthAuthenticated) return;
-
-    _hasNavigatedForShareIntent = true;
-    // Capture data before consuming so AddTransactionPage receives it
-    final data = shareState.data;
-    router.push('/add-transaction', extra: data);
-    // Delay consume until after the route is pushed so the page can read the data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(shareIntentProvider.notifier).consume();
-      _hasNavigatedForShareIntent = false;
-    });
+  void _checkAndNavigateIfPending() {
+    final intentState = ref.read(shareIntentProvider);
+    if (intentState.data != null) {
+      final auth = ref.read(authNotifierProvider).valueOrNull;
+      if (auth is AuthAuthenticated) {
+        final router = ref.read(routerProvider);
+        router.push('/add-transaction', extra: intentState.data);
+        ref.read(shareIntentProvider.notifier).consume();
+      }
+    }
   }
 
   @override
@@ -71,18 +62,17 @@ class _HisaabAppState extends ConsumerState<HisaabApp> {
     final isColorblind = ref.watch(colorblindProvider);
     final themeMode = ref.watch(themeModeProvider);
 
-    // Listen for share intent state changes (handles: app running in bg, stream delivery)
+    // Navigate to add-transaction whenever a UPI share intent is processed.
+    // We listen here (not in initState) so the router is available.
     ref.listen<ShareIntentState>(shareIntentProvider, (prev, next) {
-      if (!next.isProcessing && next.data != null) {
-        _maybeNavigateForShareIntent(router);
-      }
-    });
-
-    // Listen for auth state changes (handles: race condition where OCR finishes
-    // before auth completes — e.g. app cold-started from share intent)
-    ref.listen<AsyncValue<AuthStatus>>(authNotifierProvider, (prev, next) {
-      if (next.valueOrNull is AuthAuthenticated) {
-        _maybeNavigateForShareIntent(router);
+      if (next.data != null && prev?.data == null) {
+        // Only navigate if the user is already authenticated
+        final auth = ref.read(authNotifierProvider).valueOrNull;
+        if (auth is AuthAuthenticated) {
+          router.push('/add-transaction', extra: next.data);
+          // Mark as consumed so we don't navigate again on hot-reload / re-listen
+          ref.read(shareIntentProvider.notifier).consume();
+        }
       }
     });
 

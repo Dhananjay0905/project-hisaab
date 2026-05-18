@@ -23,16 +23,7 @@ class UpiOcrService {
   /// Processes an image file and returns the parsed UPI transaction data.
   /// Returns a [UpiTransactionData] with all fields null if nothing could be parsed.
   Future<UpiTransactionData> parseScreenshot(String filePath) async {
-    // ML Kit requires a real file path. Some apps (e.g. GPay) share images
-    // via Android content:// URIs which get translated to a cache file path
-    // by receive_sharing_intent — but we verify the file exists first.
-    final file = File(filePath);
-    if (!await file.exists()) {
-      debugPrint('[UpiOcrService] File not found at path: $filePath');
-      return const UpiTransactionData();
-    }
-
-    final inputImage = InputImage.fromFile(file);
+    final inputImage = InputImage.fromFile(File(filePath));
     final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
 
     try {
@@ -43,11 +34,9 @@ class UpiOcrService {
       final amount = _parseAmount(fullText);
       final date = _parseDate(fullText);
       final time = _parseTime(fullText);
-      final isIncome = fullText.toLowerCase().contains('money received') ||
+      final isIncome = fullText.toLowerCase().contains('money received') || 
                        fullText.toLowerCase().contains('received from');
       final merchant = _parseMerchant(fullText, isIncome);
-
-      debugPrint('[UpiOcrService] Parsed => amount: $amount | date: $date | time: $time | merchant: $merchant | isIncome: $isIncome');
 
       return UpiTransactionData(
         amount: amount,
@@ -69,6 +58,7 @@ class UpiOcrService {
     //   Rs. 500 | Rs 500.00 | INR 200
     //   Paid ₹750 | Sent ₹500 | Paid Rs.200
     //   "Amount\n₹500" (multi-line, label then value)
+    //   Plain "349" on its own line (GPay large-font amount, ₹ is a separate block)
     final patterns = [
       // ₹ with optional space, optional commas, optional decimals
       RegExp(r'₹\s*([\d,]+(?:\.\d{1,2})?)', caseSensitive: false),
@@ -78,8 +68,12 @@ class UpiOcrService {
       RegExp(r'Rs\.?\s*([\d,]+(?:\.\d{1,2})?)', caseSensitive: false),
       // INR prefix
       RegExp(r'INR\s*([\d,]+(?:\.\d{1,2})?)', caseSensitive: false),
-      // Standalone number on a line that has a decimal or comma (looks like money)
+      // Standalone number with comma/decimal (e.g. 1,234.56 or 1234.56)
       RegExp(r'^\s*([1-9]\d{0,2}(?:,\d{2,3})+(?:\.\d{1,2})?|\d+(?:\.\d{2}))\s*$', multiLine: true),
+      // Plain integer on its own line — GPay renders ₹ as a separate large block
+      // so ML Kit may produce "₹" on one line and "349" on the next.
+      // We accept any integer ≥ 1 that sits alone on a line.
+      RegExp(r'^\s*([1-9]\d{1,6})\s*$', multiLine: true),
     ];
 
     for (final pattern in patterns) {
@@ -111,7 +105,7 @@ class UpiOcrService {
       'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
     };
 
-    // Pattern 1: "18 May 2025" or "18th May 2025" or "18 May, 2025"
+    // Pattern 1: "18 May 2025" or "18th May 2025" or "18 May, 2025" or "18 May 2025, 9:53 pm"
     final wordDateRegex = RegExp(
       r'\b(\d{1,2})(?:st|nd|rd|th)?\s+'
       r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[,\s]+'
@@ -233,13 +227,12 @@ class UpiOcrService {
     // UPI ref: "To XYZ@upi"
 
     final patterns = [
-      if (isIncome) RegExp(r"(?:Received from|From:)\s+([A-Za-z][A-Za-z0-9 &'\-]{1,40})", caseSensitive: false),
-      RegExp(r"(?:Paid to|Sent to|Transferred to|Payment to|You paid|Paying)\s+([A-Za-z][A-Za-z0-9 &'\-]{1,40})", caseSensitive: false),
-      RegExp(r"To:\s+([A-Za-z][A-Za-z0-9 &'\-]{1,40})", caseSensitive: false),
-      RegExp(r"To\s+([A-Za-z][A-Za-z0-9 &'\-]{1,40})@", caseSensitive: false),
-      RegExp(r"^To\s+([A-Za-z][A-Za-z0-9 &'\-]{1,40})$", caseSensitive: false, multiLine: true),
+      if (isIncome) RegExp(r"(?:Received from|From:)\s+([A-Za-z][A-Za-z0-9 &'\-]{1,50})", caseSensitive: false),
+      RegExp(r"(?:Paid to|Sent to|Transferred to|Payment to|You paid|Paying)\s+([A-Za-z][A-Za-z0-9 &'\-]{1,50})", caseSensitive: false),
+      RegExp(r"To:\s+([A-Za-z][A-Za-z0-9 &'\-]{1,50})", caseSensitive: false),
+      RegExp(r"To\s+([A-Za-z][A-Za-z0-9 &'\-]{1,50})@", caseSensitive: false),
+      RegExp(r"^To\s+([A-Za-z][A-Za-z0-9 &'\-]{1,50})$", caseSensitive: false, multiLine: true),
     ];
-
 
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
@@ -248,9 +241,12 @@ class UpiOcrService {
         // Filter out generic words that aren't merchant names
         final excluded = {'upi', 'bank', 'payment', 'account', 'wallet'};
         if (!excluded.contains(name.toLowerCase())) {
-          // Capitalize words
+          // Smart capitalize: preserve all-caps words (abbreviations like PVR, INOX, SBI)
+          // but title-case normal words.
           return name.split(' ').map((w) {
             if (w.isEmpty) return w;
+            // If the word is fully uppercase and longer than 1 char, keep it as-is
+            if (w == w.toUpperCase() && w.length > 1) return w;
             return w[0].toUpperCase() + w.substring(1).toLowerCase();
           }).join(' ');
         }
