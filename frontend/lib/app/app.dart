@@ -11,6 +11,7 @@ import '../core/providers/theme_mode_provider.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/semantic_colors.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
+import '../features/legal/presentation/providers/legal_provider.dart';
 
 class HisaabApp extends ConsumerStatefulWidget {
   const HisaabApp({super.key});
@@ -28,6 +29,8 @@ class _HisaabAppState extends ConsumerState<HisaabApp> {
       onSessionExpired: () =>
           ref.read(authNotifierProvider.notifier).forceLogout(),
     );
+    // Prefetch legal terms (Privacy Policy & ToS) to skip any loading states in the app
+    ref.read(legalProvider);
   }
 
   @override
