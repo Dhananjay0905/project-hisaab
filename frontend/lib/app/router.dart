@@ -34,6 +34,7 @@ import '../features/wishlist/presentation/pages/wishlist_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/analytics/presentation/pages/analytics_page.dart';
 import '../shared/widgets/app_shell.dart';
+import '../core/services/upi_transaction_data.dart';
 // Data providers — invalidated on sign-out
 import '../features/analytics/presentation/providers/analytics_provider.dart';
 import '../features/categories/presentation/providers/categories_provider.dart';
@@ -232,10 +233,13 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       GoRoute(
         path: '/add-transaction',
-        pageBuilder: (_, state) => _slideUpTransition(
-          state,
-          const AddTransactionPage(),
-        ),
+        pageBuilder: (_, state) {
+          final upiData = state.extra as UpiTransactionData?;
+          return _slideUpTransition(
+            state,
+            AddTransactionPage(upiData: upiData),
+          );
+        },
       ),
 
       // Full-screen push routes (no bottom nav)

@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../../../../core/services/upi_transaction_data.dart';
 import '../../../../core/theme/semantic_colors.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/providers/budget_check_provider.dart';
@@ -32,11 +33,14 @@ class AddTransactionPage extends ConsumerStatefulWidget {
     this.initialType = 'EXPENSE',
     this.initialDate,
     this.editTransaction,
+    this.upiData,
   });
   final String initialType;
   final DateTime? initialDate;
   /// When provided, the page opens in edit mode pre-filled with these values.
   final Transaction? editTransaction;
+  /// When provided, the page opens with OCR-parsed UPI transaction data pre-filled.
+  final UpiTransactionData? upiData;
 
   @override
   ConsumerState<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -59,6 +63,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
   bool _isSubmitting = false;
   bool _excludeFromAnalytics = false;
   String? _errorMessage;
+  bool _showUpiBanner = false;
 
   late AnimationController _typeAnimController;
   late Animation<Color?> _accentAnimation;
@@ -92,6 +97,25 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
     ).animate(CurvedAnimation(parent: _typeAnimController, curve: Curves.easeInOut));
     if (_type == 'INCOME') _typeAnimController.forward();
     _amountController.addListener(() => setState(() {}));
+
+    // Pre-fill from UPI OCR data (takes lower priority than editTransaction)
+    final upi = widget.upiData;
+    if (upi != null && !_isEditing) {
+      if (upi.isIncome) {
+        _type = 'INCOME';
+        _typeAnimController.forward();
+      }
+      if (upi.amount != null) {
+        _amountController.text = upi.amount!.truncateToDouble() == upi.amount!
+            ? upi.amount!.toStringAsFixed(0)
+            : upi.amount!.toStringAsFixed(2);
+      }
+      if (upi.date != null) _selectedDate = upi.date!;
+      if (upi.time != null) _selectedTime = upi.time;
+      if (upi.merchantName != null) _titleController.text = upi.merchantName!;
+      _showUpiBanner = upi.hasAnyData;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(categorySpendProvider((null, null)).future).ignore();
     });
@@ -347,6 +371,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                       onToggle: _toggleType,
                     ),
                   ),
+
+                  // UPI auto-fill banner
+                  if (_showUpiBanner)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
+                      child: _UpiBanner(
+                        onDismiss: () => setState(() => _showUpiBanner = false),
+                      ),
+                    ),
 
                   Expanded(
                     child: SingleChildScrollView(
@@ -1017,6 +1051,63 @@ class _TimePicker extends StatelessWidget {
             else
               Icon(Icons.chevron_right_rounded,
                   color: Theme.of(context).colorScheme.outlineVariant),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── UPI Auto-fill Banner ─────────────────────────────────────────────────────
+
+/// Shown when the Add Transaction modal is opened from a UPI screenshot share.
+/// Lets the user know the fields were auto-filled and they should verify them.
+class _UpiBanner extends StatelessWidget {
+  const _UpiBanner({required this.onDismiss});
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    const bannerColor = Color(0xFF00796B); // teal-700
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: bannerColor.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: bannerColor.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            const Text('✨', style: TextStyle(fontSize: 16)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Filled from UPI screenshot',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: bannerColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    'Please verify the details before saving.',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: bannerColor.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: onDismiss,
+              child: Icon(Icons.close_rounded, size: 16, color: bannerColor),
+            ),
           ],
         ),
       ),

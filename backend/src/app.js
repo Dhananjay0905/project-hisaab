@@ -112,23 +112,23 @@ if (process.env.NODE_ENV !== 'test') {
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// ── Global rate limiter ───────────────────────────────────────────────────────
-app.use(globalLimiter);
-
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) =>
   res.json({ status: 'ok', version: '1.0.0', timestamp: new Date().toISOString() })
 );
-
-// ── API routes ────────────────────────────────────────────────────────────────
-// Auth routes — no requirePolicy (login & accept-policy must be accessible)
-app.use('/api/auth', authRoutes);
 
 // Public Legal routes (loaded dynamically by mobile apps)
 app.get('/api/legal', (_req, res) => {
   const legalData = require('./data/legal.json');
   return res.json(legalData);
 });
+
+// ── Global rate limiter ───────────────────────────────────────────────────────
+app.use(globalLimiter);
+
+// ── API routes ────────────────────────────────────────────────────────────────
+// Auth routes — no requirePolicy (login & accept-policy must be accessible)
+app.use('/api/auth', authRoutes);
 
 // All other API routes are protected.
 // Order: requireAuth (JWT check) → userLimiter (uses req.user.id) → requirePolicy (DB check)

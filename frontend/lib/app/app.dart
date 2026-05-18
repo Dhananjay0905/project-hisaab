@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app/router.dart';
 import '../core/network/api_client.dart';
 import '../core/providers/colorblind_provider.dart';
+import '../core/providers/share_intent_provider.dart';
 import '../core/providers/theme_mode_provider.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/semantic_colors.dart';
@@ -31,6 +32,8 @@ class _HisaabAppState extends ConsumerState<HisaabApp> {
     );
     // Prefetch legal terms (Privacy Policy & ToS) to skip any loading states in the app
     ref.read(legalProvider);
+    // Start listening for shared images (UPI screenshots from GPay, PhonePe, etc.)
+    ref.read(shareIntentProvider.notifier).init();
   }
 
   @override
@@ -38,6 +41,20 @@ class _HisaabAppState extends ConsumerState<HisaabApp> {
     final router = ref.watch(routerProvider);
     final isColorblind = ref.watch(colorblindProvider);
     final themeMode = ref.watch(themeModeProvider);
+
+    // Navigate to add-transaction whenever a UPI share intent is processed.
+    // We listen here (not in initState) so the router is available.
+    ref.listen<ShareIntentState>(shareIntentProvider, (prev, next) {
+      if (next.hasData && !(prev?.hasData ?? false)) {
+        // Only navigate if the user is already authenticated
+        final auth = ref.read(authNotifierProvider).valueOrNull;
+        if (auth is AuthAuthenticated) {
+          router.push('/add-transaction', extra: next.data);
+          // Mark as consumed so we don't navigate again on hot-reload / re-listen
+          ref.read(shareIntentProvider.notifier).consume();
+        }
+      }
+    });
 
     // Pick the correct semantic colors based on both colorblind and theme mode.
     // For ThemeMode.system we let MaterialApp decide which theme to use,
