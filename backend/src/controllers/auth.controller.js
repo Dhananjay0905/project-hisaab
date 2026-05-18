@@ -353,6 +353,47 @@ async function acceptPolicy(req, res, next) {
   }
 }
 
+/**
+ * GET /api/auth/reset-redirect?token=...
+ * Serves an HTML page that instantly redirects to the Hisaab app via deep link.
+ * Used to support password resets in standalone APK distributions.
+ */
+function resetRedirect(req, res) {
+  const { token } = req.query;
+  if (!token) {
+    return res.status(400).send(
+      '<html><body style="font-family:sans-serif;text-align:center;padding:60px;color:#d9534f;"><h2>❌ Error</h2><p>Reset token is missing.</p></body></html>'
+    );
+  }
+
+  const deepLink = `${process.env.CLIENT_DEEP_LINK || 'hisaab://'}reset-password?token=${token}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Reset Hisaab Password</title>
+      <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; padding: 60px 20px; background: #F5F6FB; color: #2C2F33; }
+        .btn { display: inline-block; padding: 14px 32px; background: #3861FB; color: white; text-decoration: none; border-radius: 12px; font-weight: bold; margin-top: 24px; box-shadow: 0 4px 12px rgba(56,97,251,0.2); }
+      </style>
+    </head>
+    <body>
+      <h2>Opening Hisaab App...</h2>
+      <p style="color: #595C60; margin-top: 8px;">If the app doesn't open automatically within a few seconds, click the button below:</p>
+      <a class="btn" href="${deepLink}">Open Hisaab</a>
+      <script>
+        setTimeout(function() {
+          window.location.href = "${deepLink}";
+        }, 300);
+      </script>
+    </body>
+    </html>
+  `;
+  return res.send(html);
+}
+
 module.exports = {
   register,
   registerValidation,
@@ -379,4 +420,5 @@ module.exports = {
   deleteAccount,
   deleteAccountValidation,
   acceptPolicy,
+  resetRedirect,
 };

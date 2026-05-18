@@ -159,11 +159,11 @@ abstract final class AppColorsDark {
   static const Color outlineVariant = Color(0xFF454850);
 
   // ─── Semantic aliases ────────────────────────────────────────────────────
-  static const Color cashIn = Color(0xFF7ADB8E);
+  static const Color cashIn = Color(0xFF4ADE80);
   static const Color cashInContainer = Color(0xFF1B3D24);
   static const Color cashInSurface = Color(0xFF132A1A);
 
-  static const Color cashOut = Color(0xFFE87B8F);  // softened rose — less neon than #FF8A9C
+  static const Color cashOut = Color(0xFFFF6B6B);  // distinct red
   static const Color cashOutContainer = Color(0xFF3D1520);
   static const Color cashOutSurface = Color(0xFF2A0F16);
 
@@ -192,13 +192,13 @@ abstract final class AppColorsDark {
   );
 
   static const Gradient cashInGradient = LinearGradient(
-    colors: [Color(0xFF005D22), Color(0xFF7ADB8E)],
+    colors: [Color(0xFF005D22), cashIn],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const Gradient cashOutGradient = LinearGradient(
-    colors: [Color(0xFF8C0A2E), Color(0xFFFF8A9C)],
+    colors: [Color(0xFF8C0A2E), cashOut],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

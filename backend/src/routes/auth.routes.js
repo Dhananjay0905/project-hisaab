@@ -46,6 +46,9 @@ router.get('/confirm-email-change', ctrl.confirmEmailChange);
 // GET /api/auth/verify-new-email?token=xxx        (link in new email)
 router.get('/verify-new-email', ctrl.verifyNewEmail);
 
+// GET /api/auth/reset-redirect?token=xxx         (redirects to Hisaab app via deep link)
+router.get('/reset-redirect', ctrl.resetRedirect);
+
 // ── Protected routes ──────────────────────────────────────────────────────────
 
 // GET  /api/auth/me

@@ -54,9 +54,9 @@ async function sendVerificationEmail({ name, email, token }) {
  * @param {{ name: string, email: string, token: string }} opts
  */
 async function sendPasswordResetEmail({ name, email, token }) {
-  // Deep link lets the mobile app intercept and open the reset screen
-  // Falls back to the Flutter web app URL in browser
-  const resetUrl = `${CLIENT_URL}/#/reset-password?token=${token}`;
+  // For APK distribution, we point the email link to the backend.
+  // The backend will serve an HTML page that instantly redirects via deep link (hisaab://).
+  const resetUrl = `${APP_URL}/api/auth/reset-redirect?token=${token}`;
 
   const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
   sendSmtpEmail.sender = SENDER;

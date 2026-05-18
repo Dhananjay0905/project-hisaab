@@ -221,7 +221,7 @@ class _DonutWithBreakdown extends ConsumerStatefulWidget {
 }
 
 class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
-  int _touchedIndex = -1;
+  final Set<int> _selectedIndices = {};
   static const _donutMaxSlices = 7;
 
   @override
@@ -240,26 +240,42 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
         PieChartSectionData(
           value: topCats[i].spent,
           color: _kCategoryColors[i % _kCategoryColors.length],
-          radius: _touchedIndex == i ? 50 : 38,
+          radius: _selectedIndices.contains(i) ? 50 : 38,
           showTitle: false,
         ),
       if (othersSpent > 0)
         PieChartSectionData(
           value: othersSpent,
           color: const Color(0xFFBDBDBD),
-          radius: _touchedIndex == topCats.length ? 50 : 38,
+          radius: _selectedIndices.contains(topCats.length) ? 50 : 38,
           showTitle: false,
         ),
     ];
 
     String centerTop    = fmt.format(total);
     String centerBottom = 'total spent';
-    if (_touchedIndex >= 0 && _touchedIndex < topCats.length) {
-      centerTop    = fmt.format(topCats[_touchedIndex].spent);
-      centerBottom = '${topCats[_touchedIndex].emoji} ${topCats[_touchedIndex].name}';
-    } else if (_touchedIndex == topCats.length && othersSpent > 0) {
-      centerTop    = fmt.format(othersSpent);
-      centerBottom = '🗂️ Others';
+
+    if (_selectedIndices.isNotEmpty) {
+      double selectedTotal = 0;
+      for (final idx in _selectedIndices) {
+        if (idx < topCats.length) {
+          selectedTotal += topCats[idx].spent;
+        } else if (idx == topCats.length) {
+          selectedTotal += othersSpent;
+        }
+      }
+      centerTop = fmt.format(selectedTotal);
+
+      if (_selectedIndices.length == 1) {
+        final idx = _selectedIndices.first;
+        if (idx < topCats.length) {
+          centerBottom = '${topCats[idx].emoji} ${topCats[idx].name}';
+        } else {
+          centerBottom = '🗂️ Others';
+        }
+      } else {
+        centerBottom = '${_selectedIndices.length} categories';
+      }
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -273,7 +289,7 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(children: [
           SizedBox(
-            height: 210,
+            height: 240, // increased height to prevent overlap
             child: Stack(alignment: Alignment.center, children: [
               PieChart(PieChartData(
                 sectionsSpace: 3,
@@ -281,20 +297,21 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
                 sections: sections,
                 pieTouchData: PieTouchData(
                   touchCallback: (event, response) {
-                    setState(() {
-                      if (!event.isInterestedForInteractions ||
-                          response?.touchedSection == null) {
-                        _touchedIndex = -1;
-                      } else {
-                        _touchedIndex =
-                            response!.touchedSection!.touchedSectionIndex;
-                      }
-                    });
+                    if (event is FlTapUpEvent && response?.touchedSection != null) {
+                      setState(() {
+                        final idx = response!.touchedSection!.touchedSectionIndex;
+                        if (_selectedIndices.contains(idx)) {
+                          _selectedIndices.remove(idx);
+                        } else {
+                          _selectedIndices.add(idx);
+                        }
+                      });
+                    }
                   },
                 ),
               )),
               GestureDetector(
-                onTap: () => setState(() => _touchedIndex = -1),
+                onTap: () => setState(() => _selectedIndices.clear()),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(centerTop,
                       style: AppTypography.titleMedium.copyWith(
@@ -307,24 +324,34 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
               ),
             ]),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           // Pill legend
           Wrap(spacing: 8, runSpacing: 6, children: [
             for (int i = 0; i < topCats.length; i++)
               _PillLegend(
                 color: _kCategoryColors[i % _kCategoryColors.length],
                 label: '${topCats[i].emoji} ${topCats[i].name}',
-                isActive: _touchedIndex == i,
-                onTap: () => setState(
-                    () => _touchedIndex = _touchedIndex == i ? -1 : i),
+                isActive: _selectedIndices.contains(i),
+                onTap: () => setState(() {
+                  if (_selectedIndices.contains(i)) {
+                    _selectedIndices.remove(i);
+                  } else {
+                    _selectedIndices.add(i);
+                  }
+                }),
               ),
             if (othersSpent > 0)
               _PillLegend(
                 color: const Color(0xFFBDBDBD),
                 label: '🗂️ Others (${otherCats.length})',
-                isActive: _touchedIndex == topCats.length,
-                onTap: () => setState(() => _touchedIndex =
-                    _touchedIndex == topCats.length ? -1 : topCats.length),
+                isActive: _selectedIndices.contains(topCats.length),
+                onTap: () => setState(() {
+                  if (_selectedIndices.contains(topCats.length)) {
+                    _selectedIndices.remove(topCats.length);
+                  } else {
+                    _selectedIndices.add(topCats.length);
+                  }
+                }),
               ),
           ]),
         ]),
@@ -401,7 +428,7 @@ class _PillLegend extends StatelessWidget {
               color: isActive
                   ? color
                   : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
-              width: isActive ? 1.5 : 1,
+              width: 1, // constant width to prevent layout shifts
             ),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -411,8 +438,7 @@ class _PillLegend extends StatelessWidget {
             Text(label,
                 style: AppTypography.labelSmall.copyWith(
                     color: isActive ? color : Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight:
-                        isActive ? FontWeight.w600 : FontWeight.w400)),
+                    fontWeight: FontWeight.w500)), // constant font weight to prevent layout shifts
           ]),
         ),
       );

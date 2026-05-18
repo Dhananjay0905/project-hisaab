@@ -73,19 +73,19 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
   // ─── Normal Dark (green / red on dark surfaces) ───────────────────────────
 
   static const SemanticColors normalDark = SemanticColors(
-    cashIn: AppColorsDark.cashIn,            // muted green — readable on dark surfaces
+    cashIn: AppColorsDark.cashIn,            // vibrant green — distinct on dark surfaces
     cashInContainer: Color(0xFF1B3D24),
     cashInSurface: Color(0xFF132A1A),
-    cashOut: Color(0xFFE87B8F),              // softened rose — less neon than #FF8A9C
+    cashOut: AppColorsDark.cashOut,          // vibrant red — distinct on dark surfaces
     cashOutContainer: Color(0xFF3D1520),
     cashOutSurface: Color(0xFF2A0F16),
     cashInGradient: LinearGradient(
-      colors: [Color(0xFF1B3D24), Color(0xFF7ADB8E)],   // dark green → muted leaf
+      colors: [Color(0xFF1B3D24), AppColorsDark.cashIn],   // dark green → vibrant green
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),
     cashOutGradient: LinearGradient(
-      colors: [Color(0xFF5C1A28), Color(0xFFE87B8F)],   // deep rose → muted pink
+      colors: [Color(0xFF5C1A28), AppColorsDark.cashOut],   // deep rose → vibrant red
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),

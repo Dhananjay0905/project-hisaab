@@ -948,7 +948,7 @@ class _FilterChip extends StatelessWidget {
                 color: isSelected
                     ? Theme.of(context).colorScheme.onPrimary
                     : Theme.of(context).colorScheme.onSurface,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight: FontWeight.w600, // constant font weight to prevent layout shift
               ),
         ),
       ),
@@ -1409,7 +1409,7 @@ class _CategoryChipGrid extends StatelessWidget {
                 color: isSelected
                     ? color
                     : Theme.of(context).colorScheme.outlineVariant,
-                width: isSelected ? 1.5 : 1,
+                width: 1, // constant width to prevent layout shift
               ),
             ),
             child: Row(
@@ -1424,15 +1424,9 @@ class _CategoryChipGrid extends StatelessWidget {
                         color: isSelected
                             ? color
                             : Theme.of(context).colorScheme.onSurface,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.normal,
+                        fontWeight: FontWeight.w600, // constant font weight to prevent layout shift
                       ),
                 ),
-                if (isSelected) ...[
-                  const SizedBox(width: 4),
-                  Icon(Icons.check_rounded, size: 14, color: color),
-                ],
               ],
             ),
           ),
