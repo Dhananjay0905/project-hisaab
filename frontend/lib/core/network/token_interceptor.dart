@@ -162,6 +162,7 @@ class TokenInterceptor extends Interceptor {
       '/auth/reset-password',
       '/auth/verify-email',
       '/auth/resend-verification',
+      '/legal',
     ];
     return authPaths.any((p) => path.contains(p));
   }

@@ -124,6 +124,12 @@ app.get('/health', (_req, res) =>
 // Auth routes — no requirePolicy (login & accept-policy must be accessible)
 app.use('/api/auth', authRoutes);
 
+// Public Legal routes (loaded dynamically by mobile apps)
+app.get('/api/legal', (_req, res) => {
+  const legalData = require('./data/legal.json');
+  return res.json(legalData);
+});
+
 // All other API routes are protected.
 // Order: requireAuth (JWT check) → userLimiter (uses req.user.id) → requirePolicy (DB check)
 const protectedApi = express.Router();

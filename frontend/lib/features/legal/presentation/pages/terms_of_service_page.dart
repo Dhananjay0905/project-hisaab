@@ -6,17 +6,21 @@ library;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../providers/legal_provider.dart';
 
-class TermsOfServicePage extends StatelessWidget {
+class TermsOfServicePage extends ConsumerWidget {
   const TermsOfServicePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final legalState = ref.watch(legalProvider);
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -69,7 +73,10 @@ class TermsOfServicePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Last updated: May 2025',
+                            legalState.maybeWhen(
+                              data: (data) => 'Last updated: ${data.termsOfServiceLastUpdated}',
+                              orElse: () => 'Last updated: May 2025',
+                            ),
                             style: AppTypography.bodySmall.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -84,132 +91,73 @@ class TermsOfServicePage extends StatelessWidget {
 
               // ── Scrollable body ───────────────────────────────────────────
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.screenH,
+                child: legalState.when(
+                  data: (data) {
+                    final sections = data.termsOfServiceSections;
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.screenH,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ...sections.map((sec) => Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child: _ToSSection(
+                                  icon: sec.icon,
+                                  title: sec.title,
+                                  content: sec.content,
+                                ),
+                              )),
+                          const SizedBox(height: 14),
+                        ],
+                      ),
+                    );
+                  },
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _ToSSection(
-                        icon: Icons.handshake_outlined,
-                        title: '1. Acceptance of Terms',
-                        content:
-                            'By creating an account and using Hisaab, you agree to be bound by these Terms of Service. If you do not agree, do not use the App. Continued use after changes are posted constitutes acceptance.',
+                  error: (err, stack) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.wifi_off_rounded, size: 48, color: cs.error),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Failed to load Terms of Service',
+                            style: AppTypography.titleMedium.copyWith(
+                              color: cs.onSurface,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Please check your internet connection and try again.',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: cs.primary,
+                              foregroundColor: cs.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 12),
+                            ),
+                            onPressed: () => ref.invalidate(legalProvider),
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('Retry'),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.description_outlined,
-                        title: '2. Description of Service',
-                        content:
-                            'Hisaab is a personal finance tracking application. It allows you to record transactions, manage categories, track dues, split expenses, and set savings goals.\n\n'
-                            'Hisaab is not a bank, payment processor, or financial institution. Nothing in the App constitutes financial, investment, tax, or legal advice.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.person_outline_rounded,
-                        title: '3. Eligibility',
-                        content:
-                            'You must be at least 13 years old (or 16 in the European Economic Area) to use Hisaab. By using the App, you represent that you meet this requirement.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.account_circle_outlined,
-                        title: '4. Your Account',
-                        content:
-                            'You are responsible for providing accurate registration info, keeping your password confidential, and all activity under your account. You may not create multiple accounts to circumvent restrictions.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.check_circle_outline_rounded,
-                        title: '5. Acceptable Use',
-                        content:
-                            'You agree to use Hisaab only for lawful personal finance tracking. You must not:\n'
-                            '• Use Hisaab for any illegal purpose (money laundering, fraud)\n'
-                            '• Reverse-engineer or tamper with the App or servers\n'
-                            '• Use automated bots or scrapers\n'
-                            '• Attempt to access another user\'s data\n'
-                            '• Distribute malware',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.data_usage_rounded,
-                        title: '6. Your Data',
-                        content:
-                            'You own all financial data you enter. Our use of your data is governed by our Privacy Policy. We do not guarantee the availability or backup of your data. You are responsible for maintaining your own records.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.copyright_outlined,
-                        title: '7. Intellectual Property',
-                        content:
-                            'The Hisaab application, design, logo, and codebase are the property of the developer. You may not copy, modify, distribute, or create derivative works of the App without permission.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.cloud_done_outlined,
-                        title: '8. Availability and Modifications',
-                        content:
-                            'We may modify, suspend, or discontinue the Service at any time without notice. If we plan to permanently shut down, we will try to provide 30 days\' notice via email. We are not liable for any loss resulting from changes to the Service.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.delete_outline_rounded,
-                        title: '9. Termination',
-                        content:
-                            'You may delete your account at any time (subject to a 5-day grace period). We reserve the right to suspend or terminate your account if you violate these Terms or engage in harmful behaviour.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.warning_amber_rounded,
-                        title: '10. Disclaimer of Warranties',
-                        content:
-                            'The Service is provided "as is" and "as available". We do not warrant that the Service will be uninterrupted, error-free, or secure, or that any financial calculations are accurate. Verify important data with primary sources.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.shield_outlined,
-                        title: '11. Limitation of Liability',
-                        content:
-                            'To the fullest extent permitted by law, Hisaab and its developer shall not be liable for any indirect, incidental, or consequential damages, loss of data, or financial loss. Our total liability shall not exceed INR 0 (zero rupees).',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.gavel_rounded,
-                        title: '12. Indemnification',
-                        content:
-                            'You agree to indemnify and hold harmless Hisaab and its developer from any claims or damages arising from your use of the Service in violation of these Terms or applicable law.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.balance_rounded,
-                        title: '13. Governing Law',
-                        content:
-                            'These Terms are governed by the laws of India. Any disputes will first be attempted to be resolved through good-faith negotiation, and if unresolved, subject to the exclusive jurisdiction of the courts in India.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.cut_outlined,
-                        title: '14. Severability',
-                        content:
-                            'If any provision of these Terms is found to be unenforceable, it will be modified to the minimum extent necessary, and the remaining provisions will continue in full force.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.article_outlined,
-                        title: '15. Entire Agreement',
-                        content:
-                            'These Terms and the Privacy Policy constitute the entire agreement between you and Hisaab regarding the Service.',
-                      ),
-                      const SizedBox(height: 14),
-                      _ToSSection(
-                        icon: Icons.mail_outline_rounded,
-                        title: '16. Contact',
-                        content:
-                            'For questions about these Terms, email us at hisaab.app@gmail.com with the subject "Terms of Service Inquiry". We will respond within 14 business days.',
-                      ),
-                      const SizedBox(height: 28),
-                    ],
+                    ),
                   ),
                 ),
               ),

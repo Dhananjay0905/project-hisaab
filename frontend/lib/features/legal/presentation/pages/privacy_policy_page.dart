@@ -7,17 +7,21 @@ library;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../providers/legal_provider.dart';
 
-class PrivacyPolicyPage extends StatelessWidget {
+class PrivacyPolicyPage extends ConsumerWidget {
   const PrivacyPolicyPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final legalState = ref.watch(legalProvider);
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -70,7 +74,10 @@ class PrivacyPolicyPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Last updated: May 2025',
+                            legalState.maybeWhen(
+                              data: (data) => 'Last updated: ${data.privacyPolicyLastUpdated}',
+                              orElse: () => 'Last updated: May 2025',
+                            ),
                             style: AppTypography.bodySmall.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -85,157 +92,73 @@ class PrivacyPolicyPage extends StatelessWidget {
 
               // ── Scrollable body ───────────────────────────────────────────
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.screenH,
+                child: legalState.when(
+                  data: (data) {
+                    final sections = data.privacyPolicySections;
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.screenH,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ...sections.map((sec) => Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child: _PolicySection(
+                                  icon: sec.icon,
+                                  title: sec.title,
+                                  content: sec.content,
+                                ),
+                              )),
+                          const SizedBox(height: 14),
+                        ],
+                      ),
+                    );
+                  },
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _PolicySection(
-                        icon: Icons.info_outline_rounded,
-                        title: '1. Who We Are',
-                        content:
-                            'Hisaab ("we", "us", "our") is a personal finance tracking application built and operated as an independent project. Hisaab is not a financial institution, bank, or regulated financial service.',
+                  error: (err, stack) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.wifi_off_rounded, size: 48, color: cs.error),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Failed to load Privacy Policy',
+                            style: AppTypography.titleMedium.copyWith(
+                              color: cs.onSurface,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Please check your internet connection and try again.',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: cs.primary,
+                              foregroundColor: cs.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 12),
+                            ),
+                            onPressed: () => ref.invalidate(legalProvider),
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('Retry'),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.folder_outlined,
-                        title: '2. What Data We Collect',
-                        content:
-                            'Account Data:\n'
-                            '• Display name, currency preference, opening balance, and creation date (Not encrypted).\n'
-                            '• Email address (Not encrypted — required for login and emails).\n'
-                            '• Password (bcrypt hash only — never stored as plaintext).\n\n'
-                            'Financial Records:\n'
-                            '• Transactions: Title & Note (AES-256-GCM encrypted). Amount, Type, Date, Category (Not encrypted).\n'
-                            '• Categories: Name, Emoji, Type, Limit (Not encrypted).\n'
-                            '• Dues: Title, Person\'s name, Note (AES-256-GCM encrypted). Amount, Date, Status (Not encrypted).\n'
-                            '• Splits: Title, Note, Participant names (AES-256-GCM encrypted). Amounts, Date (Not encrypted).\n'
-                            '• Savings: Total amount, Cash deduction (Not encrypted).\n'
-                            '• Wishlist: Title (AES-256-GCM encrypted). Emoji, URL, Price, Amount saved (Not encrypted).\n'
-                            '• Recurring: Title (AES-256-GCM encrypted). Amount, Type, Frequency, Next due date (Not encrypted).\n\n'
-                            'Tokens & Technical Data:\n'
-                            '• Auth tokens are stored in device secure storage.\n'
-                            '• Server logs (IP, path, timestamp) retained for 30 days. IP is tracked in-memory for rate limiting.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.lock_outline_rounded,
-                        title: '3. What Is & Is Not Encrypted',
-                        content:
-                            'Encrypted with AES-256-GCM:\n'
-                            '• Transaction titles and notes\n'
-                            '• Due titles, person names, and notes\n'
-                            '• Split titles, notes, and participant names\n'
-                            '• Wishlist item titles\n'
-                            '• Recurring transaction titles\n\n'
-                            'Not Encrypted (stored as plaintext):\n'
-                            '• Your name and email address\n'
-                            '• All numeric amounts\n'
-                            '• Category names and emojis\n'
-                            '• Dates and timestamps\n'
-                            '• Boolean flags (paid/unpaid, income/expense)\n'
-                            '• Wishlist URLs\n\n'
-                            '⚠️ Operator Access: Hisaab uses server-side encryption. The encryption key lives on the server. While we do not read your data, the operator is technically capable of decrypting it.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.pie_chart_outline_rounded,
-                        title: '4. How We Use Your Data',
-                        content:
-                            'We use your data for:\n'
-                            '• Providing the app (storing and displaying records)\n'
-                            '• Account authentication\n'
-                            '• Sending transactional emails (verification, resets)\n'
-                            '• Security monitoring and rate limiting\n'
-                            '• Responding to support requests\n\n'
-                            'We do not use your data for advertising, profiling, or sale to third parties. We have no advertising partners.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.cloud_outlined,
-                        title: '5. Where Your Data Is Stored',
-                        content:
-                            '• Database (Neon/AWS): ap-southeast-1 (Singapore)\n'
-                            '• API Server (Render): Oregon, USA\n'
-                            '• Email Delivery (Brevo): European Union (France)\n\n'
-                            'Your data is transmitted over HTTPS at all times. Transfers to third countries are covered by Data Processing Agreements and Standard Contractual Clauses.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.access_time_rounded,
-                        title: '6. Data Retention',
-                        content:
-                            '• Your account and financial records are retained until you delete your account.\n'
-                            '• Deleted account data is permanently erased after the 5-day grace period expires.\n'
-                            '• Server access logs are purged after 30 days.\n'
-                            '• Password reset / email change tokens expire in 1 hour.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.delete_outline_rounded,
-                        title: '7. Account Deletion & Erasure',
-                        content:
-                            'You can delete your account from More → Delete Account. This initiates a 5-day grace period. If you do not log in within 5 days, all your data is permanently and irreversibly deleted. There are no backups of your data after deletion.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.cookie_outlined,
-                        title: '8. Cookies & Local Storage',
-                        content:
-                            'Hisaab is a mobile app and does not use browser cookies. We use device secure storage (iOS Keychain / Android Keystore) to store your JWT access/refresh tokens. These are cleared when you log out.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.gavel_rounded,
-                        title: '9. Your Rights Under GDPR',
-                        content:
-                            'If you are in the EEA or UK, you have the right to:\n'
-                            '• Access your data (view in-app)\n'
-                            '• Rectify your data (update in Profile)\n'
-                            '• Erasure (delete account)\n'
-                            '• Data portability (email us for a JSON export)\n'
-                            '• Object to or restrict processing\n'
-                            '• Withdraw consent',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.shield_outlined,
-                        title: '10. Your Rights Under CCPA',
-                        content:
-                            'California residents have the right to know, delete, and correct their personal information, and the right to non-discrimination. We do not sell or share your personal information. Contact us to exercise these rights.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.child_care_rounded,
-                        title: '11. Children\'s Privacy',
-                        content:
-                            'Hisaab is not directed at children under the age of 13 (or 16 in the EEA). We do not knowingly collect personal data from minors. If you believe a minor has created an account, please contact us for prompt deletion.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.security_rounded,
-                        title: '12. Security',
-                        content:
-                            'We protect your data using AES-256-GCM encryption, bcrypt hashing, JWT tokens, HTTPS, and rate limiting. However, no system is perfectly secure and we cannot guarantee absolute security.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.edit_note_rounded,
-                        title: '13. Changes to This Policy',
-                        content:
-                            'We may update this Privacy Policy from time to time. For significant changes, we will notify users via email or an in-app notice.',
-                      ),
-                      const SizedBox(height: 14),
-                      _PolicySection(
-                        icon: Icons.mail_outline_rounded,
-                        title: '14. Contact Us',
-                        content:
-                            'If you have questions about this Privacy Policy or how we handle your data, please contact us at hisaab.app@gmail.com with the subject "Privacy Inquiry". We will respond within 14 business days.',
-                      ),
-                      const SizedBox(height: 28),
-                    ],
+                    ),
                   ),
                 ),
               ),
