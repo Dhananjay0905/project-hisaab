@@ -1,20 +1,13 @@
 /// ShareIntentProvider — listens for images shared to Hisaab from other apps
 /// (e.g. GPay, PhonePe) and OCRs them to extract UPI transaction details.
 ///
-/// Architecture notes:
+/// Deduplication strategy:
 ///   The receive_sharing_intent plugin fires BOTH getInitialMedia() AND
-///   getMediaStream() for the very first intent (the one that launched the
-///   Activity). This means the same image would be OCR'd twice if we naively
-///   listened to both. To avoid that, we track the last processed file path
-///   and skip duplicates.
-///
-///   For subsequent shares (onNewIntent while app is already running), only
-///   the stream fires, so there's no duplication concern.
-///
-///   Each successfully-parsed result gets a unique [intentId] (a monotonically
-///   increasing counter) so the listener in app.dart can distinguish a truly
-///   new result from a stale one, even if the underlying UpiTransactionData
-///   is identical.
+///   getMediaStream() for the very first intent. To avoid double-processing,
+///   we use a short time window (1 second): if we receive the same file path
+///   within 1s of the last processing start, we skip it. This cleanly handles
+///   the initial double-fire (milliseconds apart) without blocking a legitimate
+///   re-share of the same image minutes later.
 library;
 
 import 'dart:async';
@@ -45,20 +38,6 @@ class ShareIntentState {
   final int intentId;
 
   bool get hasData => data != null && data!.hasAnyData;
-
-  ShareIntentState copyWith({
-    UpiTransactionData? data,
-    bool? isProcessing,
-    String? error,
-    int? intentId,
-  }) {
-    return ShareIntentState(
-      data: data ?? this.data,
-      isProcessing: isProcessing ?? this.isProcessing,
-      error: error ?? this.error,
-      intentId: intentId ?? this.intentId,
-    );
-  }
 }
 
 // ─── Notifier ─────────────────────────────────────────────────────────────────
@@ -68,50 +47,34 @@ class ShareIntentNotifier extends StateNotifier<ShareIntentState> {
 
   StreamSubscription<List<SharedMediaFile>>? _streamSub;
 
-  /// The file path of the last intent we processed (or are currently
-  /// processing). Used to deduplicate the initial-media / stream double-fire.
+  /// Timestamp of the last time we started processing a file.
+  DateTime _lastProcessedAt = DateTime(2000);
+
+  /// Path of the file we last started processing.
   String? _lastProcessedPath;
 
   /// Counter for unique intent IDs.
   int _nextIntentId = 1;
 
-  /// Whether the initial media has already been handled. If so, the stream
-  /// listener should skip any event that arrives with the same path.
-  bool _initialHandled = false;
-
   /// Call this once during app startup.
   void init() {
     // 1) Handle initial share (app launched FROM a share action).
-    //    This ALSO fires via the stream, so we track the path.
     ReceiveSharingIntent.instance.getInitialMedia().then((files) {
-      if (files.isNotEmpty) {
-        _initialHandled = true;
-        _handleSharedFiles(files);
-      }
+      if (files.isNotEmpty) _handleSharedFiles(files);
     });
 
-    // 2) Handle shares while the app is already running.
+    // 2) Handle shares while the app is already running (onNewIntent path).
     _streamSub = ReceiveSharingIntent.instance.getMediaStream().listen(
       (files) {
-        if (files.isEmpty) return;
-
-        // Deduplicate: if the initial media was already handled and this
-        // stream event has the exact same path, skip it.
-        final streamPath = _extractImagePath(files);
-        if (_initialHandled && streamPath != null && streamPath == _lastProcessedPath) {
-          debugPrint('[ShareIntent] Skipping duplicate stream event for: $streamPath');
-          return;
-        }
-
-        _handleSharedFiles(files);
+        if (files.isNotEmpty) _handleSharedFiles(files);
       },
       onError: (err) {
-        state = state.copyWith(error: err.toString());
+        debugPrint('[ShareIntent] Stream error: $err');
       },
     );
   }
 
-  /// Extract the image path from a list of shared files (returns null if none).
+  /// Extract the first image path from a list of shared files.
   String? _extractImagePath(List<SharedMediaFile> files) {
     for (final f in files) {
       final path = f.path.toLowerCase();
@@ -127,28 +90,29 @@ class ShareIntentNotifier extends StateNotifier<ShareIntentState> {
   }
 
   Future<void> _handleSharedFiles(List<SharedMediaFile> files) async {
-    // Find the first image file
     final imagePath = _extractImagePath(files);
     if (imagePath == null) return;
 
-    // Deduplicate: if we're already processing (or just processed) this path,
-    // don't start again. This catches the initial+stream double-fire.
-    if (imagePath == _lastProcessedPath && state.isProcessing) {
-      debugPrint('[ShareIntent] Already processing $imagePath, skipping');
+    // ── Dedup: skip if same path within 1 second (initial double-fire) ──
+    final now = DateTime.now();
+    if (imagePath == _lastProcessedPath &&
+        now.difference(_lastProcessedAt).inMilliseconds < 1000) {
+      debugPrint('[ShareIntent] Dedup: skipping duplicate within 1s for $imagePath');
       return;
     }
 
     _lastProcessedPath = imagePath;
+    _lastProcessedAt = now;
     final thisIntentId = _nextIntentId++;
 
+    debugPrint('[ShareIntent] Processing intent #$thisIntentId: $imagePath');
     state = ShareIntentState(isProcessing: true, intentId: thisIntentId);
 
     try {
       final upiData = await UpiOcrService.instance.parseScreenshot(imagePath);
-      debugPrint('[ShareIntent] OCR result: $upiData');
+      debugPrint('[ShareIntent] OCR result #$thisIntentId: $upiData');
 
-      // Only update state if this is still the latest intent (user might have
-      // shared something else while we were OCR-ing).
+      // Only update if this is still the latest intent
       if (thisIntentId == _nextIntentId - 1) {
         state = ShareIntentState(
           data: upiData,
@@ -157,7 +121,7 @@ class ShareIntentNotifier extends StateNotifier<ShareIntentState> {
         );
       }
     } catch (e) {
-      debugPrint('[ShareIntent] OCR error: $e');
+      debugPrint('[ShareIntent] OCR error #$thisIntentId: $e');
       if (thisIntentId == _nextIntentId - 1) {
         state = ShareIntentState(
           isProcessing: false,
@@ -169,10 +133,6 @@ class ShareIntentNotifier extends StateNotifier<ShareIntentState> {
   }
 
   /// Call after the app has consumed the parsed data (e.g. navigation done).
-  ///
-  /// Clears the data but preserves the intentId so listeners don't re-trigger.
-  /// Does NOT call ReceiveSharingIntent.instance.reset() — that kills the
-  /// native stream and breaks subsequent shares.
   void consume() {
     state = ShareIntentState(intentId: state.intentId);
   }
