@@ -156,6 +156,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
   }
 
   Future<void> _pickDate() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -166,6 +167,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
   }
 
   Future<void> _pickTime() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     final picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime ?? TimeOfDay.now(),
