@@ -23,6 +23,10 @@ class HisaabApp extends ConsumerStatefulWidget {
 }
 
 class _HisaabAppState extends ConsumerState<HisaabApp> {
+  /// Tracks the last intentId we navigated for, so we never navigate
+  /// twice for the same shared image (even across listen + postFrame checks).
+  int _lastHandledIntentId = 0;
+
   @override
   void initState() {
     super.initState();
@@ -40,19 +44,41 @@ class _HisaabAppState extends ConsumerState<HisaabApp> {
     // (and ref.listen is registered), we'd miss the state transition.
     // Check once after the first frame — if data is already there, navigate.
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      _checkAndNavigateIfPending();
+      _tryNavigateToAddTransaction();
     });
   }
 
-  void _checkAndNavigateIfPending() {
+  /// Navigates to add-transaction if there's pending UPI data that we
+  /// haven't handled yet. Uses [_lastHandledIntentId] to prevent
+  /// double-navigation from both ref.listen and the post-frame callback.
+  void _tryNavigateToAddTransaction() {
     final intentState = ref.read(shareIntentProvider);
-    if (intentState.data != null) {
-      final auth = ref.read(authNotifierProvider).valueOrNull;
-      if (auth is AuthAuthenticated) {
-        final router = ref.read(routerProvider);
+
+    // Nothing to do if no data, still processing, or already handled this intent
+    if (intentState.data == null) return;
+    if (intentState.intentId <= _lastHandledIntentId) return;
+
+    // Only navigate if the user is authenticated
+    final auth = ref.read(authNotifierProvider).valueOrNull;
+    if (auth is! AuthAuthenticated) return;
+
+    _lastHandledIntentId = intentState.intentId;
+
+    final router = ref.read(routerProvider);
+
+    // If the add-transaction modal is already open (user shared a 2nd image
+    // quickly), pop it first so we don't stack multiple modals.
+    final currentUri = router.routeInformationProvider.value.uri.toString();
+    if (currentUri.contains('add-transaction')) {
+      router.pop();
+      // Give the pop animation a moment to complete, then push the new one.
+      Future.delayed(const Duration(milliseconds: 300), () {
         router.push('/add-transaction', extra: intentState.data);
         ref.read(shareIntentProvider.notifier).consume();
-      }
+      });
+    } else {
+      router.push('/add-transaction', extra: intentState.data);
+      ref.read(shareIntentProvider.notifier).consume();
     }
   }
 
@@ -63,22 +89,15 @@ class _HisaabAppState extends ConsumerState<HisaabApp> {
     final themeMode = ref.watch(themeModeProvider);
 
     // Navigate to add-transaction whenever a UPI share intent is processed.
-    // We listen here (not in initState) so the router is available.
     ref.listen<ShareIntentState>(shareIntentProvider, (prev, next) {
-      if (next.data != null && prev?.data == null) {
-        // Only navigate if the user is already authenticated
-        final auth = ref.read(authNotifierProvider).valueOrNull;
-        if (auth is AuthAuthenticated) {
-          router.push('/add-transaction', extra: next.data);
-          // Mark as consumed so we don't navigate again on hot-reload / re-listen
-          ref.read(shareIntentProvider.notifier).consume();
-        }
+      // Only react when new data arrives with a new intentId
+      if (next.data != null &&
+          next.intentId > _lastHandledIntentId) {
+        _tryNavigateToAddTransaction();
       }
     });
 
     // Pick the correct semantic colors based on both colorblind and theme mode.
-    // For ThemeMode.system we let MaterialApp decide which theme to use,
-    // so we provide both light and dark semantic colors.
     final lightSemanticColors =
         isColorblind ? SemanticColors.colorblind : SemanticColors.normal;
     final darkSemanticColors =
