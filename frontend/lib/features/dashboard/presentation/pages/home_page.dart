@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -86,81 +87,92 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
 
-    return Scaffold(
-      backgroundColor: cs.surface,
-      body: RefreshIndicator(
-        color: cs.primary,
-        onRefresh: () => ref.read(dashboardSummaryProvider.notifier).refresh(),
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          slivers: [
-            // ── App Bar (pinned — status bar always has a solid background) ──
-            SliverAppBar(
-              backgroundColor: cs.surface,
-              surfaceTintColor: Colors.transparent,
-              pinned: true,
-              elevation: 0,
-              expandedHeight: 100,
-              title: Text('Hisaab', style: AppTypography.titleLarge),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: IconButton(
-                    icon: Icon(
-                      switch (themeMode) {
-                        ThemeMode.light  => Icons.light_mode_rounded,
-                        ThemeMode.dark   => Icons.dark_mode_rounded,
-                        ThemeMode.system => Icons.brightness_auto_rounded,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          // Move task to background instead of returning to the calling app
+          // (e.g. GPay when the user arrived via a share intent).
+          const MethodChannel('app.hisaab.hisaab/system')
+              .invokeMethod('moveTaskToBack');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: cs.surface,
+        body: RefreshIndicator(
+          color: cs.primary,
+          onRefresh: () => ref.read(dashboardSummaryProvider.notifier).refresh(),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              // ── App Bar (pinned — status bar always has a solid background) ──
+              SliverAppBar(
+                backgroundColor: cs.surface,
+                surfaceTintColor: Colors.transparent,
+                pinned: true,
+                elevation: 0,
+                expandedHeight: 100,
+                title: Text('Hisaab', style: AppTypography.titleLarge),
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: IconButton(
+                      icon: Icon(
+                        switch (themeMode) {
+                          ThemeMode.light  => Icons.light_mode_rounded,
+                          ThemeMode.dark   => Icons.dark_mode_rounded,
+                          ThemeMode.system => Icons.brightness_auto_rounded,
+                        },
+                        color: cs.onSurfaceVariant,
+                      ),
+                      tooltip: switch (themeMode) {
+                        ThemeMode.light  => 'Light mode',
+                        ThemeMode.dark   => 'Dark mode',
+                        ThemeMode.system => 'System mode',
                       },
-                      color: cs.onSurfaceVariant,
+                      onPressed: () =>
+                          ref.read(themeModeProvider.notifier).cycle(),
                     ),
-                    tooltip: switch (themeMode) {
-                      ThemeMode.light  => 'Light mode',
-                      ThemeMode.dark   => 'Dark mode',
-                      ThemeMode.system => 'System mode',
-                    },
-                    onPressed: () =>
-                        ref.read(themeModeProvider.notifier).cycle(),
                   ),
-                ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Padding(
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 48,
-                    left: AppSpacing.lg,
-                    right: AppSpacing.lg,
-                  ),
-                  child: Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        '${_greeting()} $userName 👋',
-                        style: AppTypography.bodyMedium
-                            .copyWith(color: cs.onSurfaceVariant),
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Padding(
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.of(context).padding.top + 48,
+                      left: AppSpacing.lg,
+                      right: AppSpacing.lg,
+                    ),
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          '${_greeting()} $userName 👋',
+                          style: AppTypography.bodyMedium
+                              .copyWith(color: cs.onSurfaceVariant),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            // ── Content ──────────────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: summaryAsync.when(
-                loading: () => const _LoadingState(),
-                error: (e, _) => _ErrorState(
-                  message: e.toString().replaceAll('Exception:', '').trim(),
-                  onRetry: () =>
-                      ref.read(dashboardSummaryProvider.notifier).refresh(),
+              // ── Content ──────────────────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: summaryAsync.when(
+                  loading: () => const _LoadingState(),
+                  error: (e, _) => _ErrorState(
+                    message: e.toString().replaceAll('Exception:', '').trim(),
+                    onRetry: () =>
+                        ref.read(dashboardSummaryProvider.notifier).refresh(),
+                  ),
+                  data: (summary) => _DashboardContent(summary: summary),
                 ),
-                data: (summary) => _DashboardContent(summary: summary),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
