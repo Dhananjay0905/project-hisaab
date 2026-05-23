@@ -1313,8 +1313,7 @@ class _FilterSummaryBar extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 
