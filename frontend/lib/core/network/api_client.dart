@@ -124,15 +124,18 @@ class ApiClient {
   AppException _mapDioException(DioException e) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
+        return const NetworkException('Connection timed out. Please try again.');
       case DioExceptionType.receiveTimeout:
+        return const NetworkException('Server took too long to respond. Please try again.');
       case DioExceptionType.sendTimeout:
+        return const NetworkException('Request timed out. Please try again.');
       case DioExceptionType.connectionError:
-        return const NetworkException();
+        return const NetworkException('Could not reach the server. Check your internet connection.');
 
       case DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode ?? 0;
         final data = e.response?.data;
-        final message = _extractMessage(data) ?? 'Request failed.';
+        final message = _extractMessage(data) ?? 'Something went wrong. Please try again.';
 
         if (statusCode == 401) return UnauthorizedException(message);
         if (statusCode == 403) {
@@ -145,7 +148,12 @@ class ApiClient {
           final fieldErrors = _extractFieldErrors(data);
           return ValidationException(message, fieldErrors: fieldErrors);
         }
-        if (statusCode >= 500) return ServerException(message, statusCode: statusCode);
+        if (statusCode >= 500) {
+          return ServerException(
+            'Something went wrong on our end. Please try again.',
+            statusCode: statusCode,
+          );
+        }
         return ServerException(message, statusCode: statusCode);
 
       default:

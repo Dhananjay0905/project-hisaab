@@ -10,6 +10,9 @@ sealed class Failure extends Equatable {
 
   @override
   List<Object?> get props => [message];
+
+  @override
+  String toString() => message;
 }
 
 /// Could not reach the server (no internet, timeout, etc.)

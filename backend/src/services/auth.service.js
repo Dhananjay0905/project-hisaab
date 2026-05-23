@@ -17,6 +17,8 @@
  */
 
 const bcrypt = require('bcryptjs');
+const path = require('path');
+const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const { createError } = require('../middleware/errorHandler');
 const {
@@ -33,6 +35,27 @@ const {
   sendNewEmailVerification,
   sendAccountDeletionEmail,
 } = require('../utils/email');
+
+// ─── Policy version helper ────────────────────────────────────────────────────
+
+/**
+ * Returns the current policyVersion string from legal.json.
+ * Result is cached after the first read to avoid repeated disk I/O.
+ */
+let _cachedPolicyVersion = null;
+function _getPolicyVersion() {
+  if (!_cachedPolicyVersion) {
+    try {
+      const legalPath = path.join(__dirname, '../data/legal.json');
+      const legal = JSON.parse(fs.readFileSync(legalPath, 'utf8'));
+      _cachedPolicyVersion = legal.policyVersion || null;
+    } catch (err) {
+      console.error('[AUTH] Failed to read policyVersion from legal.json:', err.message);
+      _cachedPolicyVersion = null;
+    }
+  }
+  return _cachedPolicyVersion;
+}
 
 const prisma = new PrismaClient();
 
@@ -216,10 +239,20 @@ async function login({ email, password }) {
     })
     .catch(() => { });
 
+  // Check if the user needs to re-accept an updated policy (same logic as getMe).
+  const policyVersion = _getPolicyVersion();
+  let policyRequiresReAcceptance = false;
+  if (policyVersion) {
+    const versionDate = new Date(policyVersion);
+    if (!user.policyAcceptedAt || user.policyAcceptedAt < versionDate) {
+      policyRequiresReAcceptance = true;
+    }
+  }
+
   return {
     accessToken,
     refreshToken: refreshTokenValue,
-    user: _formatUser(user),
+    user: _formatUser(user, policyRequiresReAcceptance),
     accountRecovered,  // frontend shows recovery banner when true
   };
 }
@@ -392,7 +425,19 @@ async function resetPassword({ token, newPassword }) {
 async function getMe(userId) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw createError('User not found.', 404, 'NOT_FOUND');
-  return _formatUser(user);
+
+  // Check if the user needs to re-accept an updated policy.
+  const policyVersion = _getPolicyVersion();
+  let policyRequiresReAcceptance = false;
+  if (policyVersion) {
+    const versionDate = new Date(policyVersion);
+    // Requires re-acceptance if never accepted OR accepted before the current version date.
+    if (!user.policyAcceptedAt || user.policyAcceptedAt < versionDate) {
+      policyRequiresReAcceptance = true;
+    }
+  }
+
+  return _formatUser(user, policyRequiresReAcceptance);
 }
 
 // ─── Update Name ─────────────────────────────────────────────────────────────────────────────────
@@ -544,7 +589,7 @@ async function changePassword(userId, { currentPassword, newPassword }) {
 
 // ─── Format User ──────────────────────────────────────────────────────────────
 
-function _formatUser(user) {
+function _formatUser(user, policyRequiresReAcceptance = false) {
   return {
     id: user.id,
     email: user.email,
@@ -557,6 +602,9 @@ function _formatUser(user) {
     monthlyBudget: user.monthlyBudget != null ? parseFloat(user.monthlyBudget) : null,
     createdAt: user.createdAt,
     policyAcceptedAt: user.policyAcceptedAt,
+    // True when the user's last acceptance predates the current policyVersion.
+    // The frontend uses this to route the user back to the /accept-policy gate.
+    policyRequiresReAcceptance,
   };
 }
 

@@ -56,13 +56,15 @@ class TransactionFilters {
     bool clearType = false,
     bool clearSearch = false,
     bool clearCategoryIds = false,
+    bool clearStartDate = false,
+    bool clearEndDate = false,
   }) {
     return TransactionFilters(
       type: clearType ? null : (type ?? this.type),
       categoryIds: clearCategoryIds ? [] : (categoryIds ?? this.categoryIds),
       search: clearSearch ? null : (search ?? this.search),
-      startDate: startDate ?? this.startDate,
-      endDate: endDate ?? this.endDate,
+      startDate: clearStartDate ? null : (startDate ?? this.startDate),
+      endDate: clearEndDate ? null : (endDate ?? this.endDate),
       page: page ?? this.page,
     );
   }
@@ -112,6 +114,8 @@ class TransactionsNotifier extends AsyncNotifier<TransactionPage> {
       pages: nextPage.pages,
       hasNext: nextPage.hasNext,
       hasPrev: nextPage.hasPrev,
+      incomeTotal: nextPage.incomeTotal,
+      expenseTotal: nextPage.expenseTotal,
     ));
   }
 

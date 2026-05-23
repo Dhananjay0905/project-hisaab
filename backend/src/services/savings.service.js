@@ -14,6 +14,7 @@
 
 const { PrismaClient } = require('@prisma/client');
 const { createError } = require('../middleware/errorHandler');
+const { getUserBalance } = require('../utils/balance.utils');
 
 const prisma = new PrismaClient();
 
@@ -74,6 +75,22 @@ async function updateSavings(userId, { totalAmount, cashDeduction, deductFromBal
   const data = {};
   if (totalAmount !== undefined) {
     if (totalAmount < 0) throw createError('Total amount cannot be negative.', 400, 'INVALID_AMOUNT');
+
+    // ── Balance check ─────────────────────────────────────────────────
+    // Savings should not exceed the actual account balance — if the user has
+    // money kept separately (cash, another account), they should use the
+    // "Offline Savings" field instead of inflating the main savings total.
+    const balance = await getUserBalance(userId, prisma);
+    if (totalAmount > balance) {
+      throw createError(
+        `Your savings cannot exceed your current balance of ₹${balance.toFixed(2)}. ` +
+        `If you have money kept separately (e.g. cash or another account), ` +
+        `add it under "Offline Savings" on the savings page instead.`,
+        422,
+        'INSUFFICIENT_BALANCE'
+      );
+    }
+
     data.totalAmount = totalAmount;
   }
   if (cashDeduction !== undefined) {

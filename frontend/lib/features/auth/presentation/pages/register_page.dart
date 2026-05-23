@@ -44,14 +44,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   void _onPasswordChanged(String value) {
     int strength = 0;
-    if (value.isNotEmpty) strength = 1; // weak
+    if (value.isNotEmpty) {
+      strength = 1; // weak
+    }
     if (value.length >= 8 &&
         RegExp(r'[A-Za-z]').hasMatch(value) &&
-        RegExp(r'[0-9]').hasMatch(value)) strength = 2; // fair
+        RegExp(r'[0-9]').hasMatch(value)) {
+      strength = 2; // fair
+    }
     if (value.length >= 10 &&
         RegExp(r'[A-Za-z]').hasMatch(value) &&
         RegExp(r'[0-9]').hasMatch(value) &&
-        RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(value)) strength = 3; // strong
+        RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(value)) {
+      strength = 3; // strong
+    }
     setState(() => _passwordStrength = strength);
     // Re-validate confirm field so mismatch error updates live
     _confirmFieldKey.currentState?.validate();

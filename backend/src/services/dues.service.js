@@ -17,6 +17,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { createError } = require('../middleware/errorHandler');
 const { encrypt, decrypt, encryptOptional, decryptOptional } = require('../utils/encrypt');
+const { getUserBalance, assertSufficientBalance } = require('../utils/balance.utils');
 
 const prisma = new PrismaClient();
 
@@ -148,6 +149,17 @@ async function settleDue(userId, id, { logAsTransaction = false } = {}) {
     if (logAsTransaction) {
       // I_OWE → EXPENSE (you paid someone), THEY_OWE → INCOME (you received money)
       const txType = existing.type === 'I_OWE' ? 'EXPENSE' : 'INCOME';
+
+      // ── Balance check (I_OWE only — THEY_OWE creates INCOME, safe) ──────────
+      // Run inside the tx so if this throws, the due.update above is rolled back.
+      if (txType === 'EXPENSE') {
+        const balance = await getUserBalance(userId, tx);
+        assertSufficientBalance(
+          balance - parseFloat(existing.amount),
+          'Insufficient balance. Settling this due would push your balance below zero.'
+        );
+      }
+
       const title = decrypt(existing.title);
       const personName = decrypt(existing.personName);
       await tx.transaction.create({

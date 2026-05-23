@@ -16,8 +16,8 @@ class CategoryRepositoryImpl implements CategoryRepository {
   Future<List<Category>> getCategories() async {
     try {
       return await _remote.getCategories();
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -41,8 +41,8 @@ class CategoryRepositoryImpl implements CategoryRepository {
       );
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message, fieldErrors: e.fieldErrors);
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -68,8 +68,8 @@ class CategoryRepositoryImpl implements CategoryRepository {
       throw ValidationFailure(e.message, fieldErrors: e.fieldErrors);
     } on NotFoundException {
       throw const NotFoundFailure();
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -81,8 +81,8 @@ class CategoryRepositoryImpl implements CategoryRepository {
       await _remote.deleteCategory(id);
     } on NotFoundException {
       throw const NotFoundFailure();
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }

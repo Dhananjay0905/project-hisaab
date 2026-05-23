@@ -31,7 +31,9 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
   int _participantCount = 2; // minimum 1 other person + you = 2 total
   late List<TextEditingController> _nameControllers;
   DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
   Category? _selectedCategory;
+  bool _logAsExpense = true;
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -108,14 +110,24 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
 
     setState(() { _isSubmitting = true; _errorMessage = null; });
 
+    // Combine selected date and time into a single DateTime
+    final combinedDate = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
     try {
       await ref.read(splitsProvider.notifier).addSplit(
         title: title,
         totalAmount: total,
         participantNames: names,
         note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim(),
-        date: _selectedDate,
+        date: combinedDate,
         categoryId: _selectedCategory?.id,
+        logAsExpense: _logAsExpense,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -269,41 +281,139 @@ class _AddSplitPageState extends ConsumerState<AddSplitPage> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
-                  // ── Date ───────────────────────────────────────────────────
-                  _Label('Date'),
+                  // ── Date & Time ────────────────────────────────────────────
+                  _Label('Date & Time'),
                   const SizedBox(height: AppSpacing.xs),
-                  GestureDetector(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                      );
-                      if (picked != null) setState(() => _selectedDate = picked);
-                    },
+                  Row(
+                    children: [
+                      // Date picker
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: _selectedDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (picked != null) setState(() => _selectedDate = picked);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .outlineVariant
+                                    .withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.calendar_today_rounded,
+                                    size: 18,
+                                    color: Theme.of(context).colorScheme.primary),
+                                const SizedBox(width: 8),
+                                Text(
+                                  DateFormat('MMM d, yyyy').format(_selectedDate),
+                                  style: AppTypography.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      // Time picker
+                      GestureDetector(
+                        onTap: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: _selectedTime,
+                          );
+                          if (picked != null) setState(() => _selectedTime = picked);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outlineVariant
+                                  .withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.access_time_rounded,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.primary),
+                              const SizedBox(width: 8),
+                              Text(
+                                _selectedTime.format(context),
+                                style: AppTypography.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // ── Log as expense ────────────────────────────────────────
+                  InkWell(
+                    onTap: () => setState(() => _logAsExpense = !_logAsExpense),
+                    borderRadius: BorderRadius.circular(12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 14),
+                          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                        borderRadius: BorderRadius.circular(14),
+                        color: _logAsExpense
+                            ? SemanticColors.of(context).cashOutSurface
+                            : Theme.of(context).colorScheme.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .outlineVariant
-                              .withValues(alpha: 0.5),
+                          color: _logAsExpense
+                              ? SemanticColors.of(context).cashOut.withValues(alpha: 0.4)
+                              : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
                         ),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.calendar_today_rounded,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 10),
-                          Text(
-                            DateFormat('MMM d, yyyy').format(_selectedDate),
-                            style: AppTypography.bodyMedium,
+                          Checkbox(
+                            value: _logAsExpense,
+                            onChanged: (v) => setState(() => _logAsExpense = v ?? true),
+                            activeColor: SemanticColors.of(context).cashOut,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Log full amount as expense',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                if (_logAsExpense && _perPerson > 0)
+                                  Text(
+                                    'Adds ₹${_currencyFmt.format(double.tryParse(_totalAmountController.text.trim()) ?? 0)} expense · note: $_participantCount people · ₹${_currencyFmt.format(_perPerson)}/person',
+                                    style: AppTypography.labelSmall.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ],
                       ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_error_widget.dart';
+import '../../../../core/widgets/skeleton_loading.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -33,6 +35,11 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   Set<String> _selectedCategoryIds = {};
   _ViewMode _viewMode = _ViewMode.list;
 
+  // Date period filter state
+  String? _activePeriodLabel; // e.g. 'This Month', null = no date filter
+  DateTime? _customStart;
+  DateTime? _customEnd;
+
   // Calendar state
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -40,6 +47,12 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   // Transactions cache for the currently focused month (calendar mode)
   List<Transaction> _calendarMonthTxns = [];
   bool _isLoadingCalendarMonth = false;
+
+  bool get _hasActiveFilters =>
+      _selectedCategoryIds.isNotEmpty || _activePeriodLabel != null;
+
+  int get _activeFilterCount =>
+      (_activePeriodLabel != null ? 1 : 0) + _selectedCategoryIds.length;
 
   @override
   void initState() {
@@ -87,19 +100,43 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     ));
   }
 
-  void _showCategoryFilterSheet() {
+  void _applyDateFilter(String? label, DateTime? start, DateTime? end) {
+    setState(() {
+      _activePeriodLabel = label;
+      _customStart = start;
+      _customEnd = end;
+    });
+    final notifier = ref.read(transactionsProvider.notifier);
+    notifier.applyFilters(notifier.filters.copyWith(
+      startDate: start?.toUtc().toIso8601String(),
+      endDate: end?.toUtc().toIso8601String(),
+      clearStartDate: start == null,
+      clearEndDate: end == null,
+    ));
+  }
+
+  void _showFilterSheet() {
     final allCategories =
         ref.read(categoriesProvider).valueOrNull ?? <Category>[];
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CategoryFilterSheet(
+      builder: (_) => _FilterSheet(
         allCategories: allCategories,
-        selectedIds: Set.from(_selectedCategoryIds),
-        onApply: (ids) {
+        selectedCategoryIds: Set.from(_selectedCategoryIds),
+        activePeriodLabel: _activePeriodLabel,
+        customStart: _customStart,
+        customEnd: _customEnd,
+        onApply: ({
+          required Set<String> categoryIds,
+          required String? periodLabel,
+          required DateTime? start,
+          required DateTime? end,
+        }) {
           Navigator.pop(context);
-          _applyCategoryFilter(ids);
+          _applyCategoryFilter(categoryIds);
+          _applyDateFilter(periodLabel, start, end);
         },
       ),
     );
@@ -364,13 +401,16 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Category filter icon button (pinned right)
+                    // Filter icon button (pinned right) — opens unified filter sheet
                     _FilterIconButton(
-                      isActive: _selectedCategoryIds.isNotEmpty,
-                      selectedCount: _selectedCategoryIds.length,
-                      onTap: _showCategoryFilterSheet,
-                      onClear: _selectedCategoryIds.isNotEmpty
-                          ? () => _applyCategoryFilter({})
+                      isActive: _hasActiveFilters,
+                      selectedCount: _activeFilterCount,
+                      onTap: _showFilterSheet,
+                      onClear: _hasActiveFilters
+                          ? () {
+                              _applyCategoryFilter({});
+                              _applyDateFilter(null, null, null);
+                            }
                           : null,
                     ),
                   ],
@@ -379,6 +419,23 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               ],
             ),
           ),
+
+          // ── Filter Summary Bar (shown when any filter is active) ─────────
+          if (_viewMode == _ViewMode.list)
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child: _hasActiveFilters
+                  ? _FilterSummaryBar(
+                      txState: txState,
+                      currencySymbol: currencySymbol,
+                      periodLabel: _activePeriodLabel,
+                      customStart: _customStart,
+                      customEnd: _customEnd,
+                      categoryCount: _selectedCategoryIds.length,
+                    )
+                  : const SizedBox.shrink(),
+            ),
 
           // ── Content ───────────────────────────────────────────────────────
           Expanded(
@@ -518,24 +575,11 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline_rounded,
-                color: Theme.of(context).colorScheme.error, size: 48),
-            const SizedBox(height: 16),
-            Text('Failed to load transactions',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () =>
-                  ref.read(transactionsProvider.notifier).refresh(),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
+      loading: () => const TransactionsSkeleton(),
+      error: (err, _) => AppErrorWidget(
+        title: 'Failed to load transactions',
+        message: err.toString().replaceAll('Exception:', '').trim(),
+        onRetry: () => ref.read(transactionsProvider.notifier).refresh(),
       ),
     );
   }
@@ -676,7 +720,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         // Day transactions list
         Expanded(
           child: _isLoadingCalendarMonth
-              ? const Center(child: CircularProgressIndicator())
+              ? const CompactTransactionListSkeleton()
               : _selectedDay == null
                   ? Center(
                       child: Column(
@@ -1098,7 +1142,183 @@ class _ContextMenuItem extends StatelessWidget {
   }
 }
 
-// ─── Filter Icon Button (category filter, pinned right) ────────────────────
+// ─── Filter Summary Bar ──────────────────────────────────────────────────────
+
+class _FilterSummaryBar extends StatelessWidget {
+  const _FilterSummaryBar({
+    required this.txState,
+    required this.currencySymbol,
+    required this.periodLabel,
+    required this.customStart,
+    required this.customEnd,
+    required this.categoryCount,
+  });
+
+  final AsyncValue<TransactionPage> txState;
+  final String currencySymbol;
+  final String? periodLabel;
+  final DateTime? customStart;
+  final DateTime? customEnd;
+  final int categoryCount;
+
+  String get _periodText {
+    if (periodLabel == 'Custom' && customStart != null && customEnd != null) {
+      final fmt = DateFormat('d MMM');
+      return '${fmt.format(customStart!)} – ${fmt.format(customEnd!)}';
+    }
+    return periodLabel ?? '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sem = SemanticColors.of(context);
+    final cs = Theme.of(context).colorScheme;
+
+    final isLoading = txState.isLoading;
+
+    // Only read totals when data is fresh — never show stale values while loading
+    final incomeTotal = isLoading ? null : (txState.valueOrNull?.incomeTotal ?? 0.0);
+    final expenseTotal = isLoading ? null : (txState.valueOrNull?.expenseTotal ?? 0.0);
+    final net = (incomeTotal != null && expenseTotal != null)
+        ? incomeTotal - expenseTotal
+        : null;
+    final total = isLoading ? null : (txState.valueOrNull?.total ?? 0);
+
+    // Build chip labels
+    final chips = <String>[
+      if (periodLabel != null) _periodText,
+      if (categoryCount > 0)
+        '$categoryCount ${categoryCount == 1 ? 'category' : 'categories'}',
+    ];
+
+    // Helper to format an amount or return placeholder
+    String fmtAmount(double? val, {String prefix = ''}) =>
+        val == null ? '---' : '$prefix$currencySymbol${val.toStringAsFixed(0)}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.outlineVariant.withAlpha(80)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Totals row
+            Row(
+              children: [
+                // Cash In
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Cash In',
+                          style: AppTypography.labelSmall
+                              .copyWith(color: cs.onSurfaceVariant)),
+                      const SizedBox(height: 2),
+                      Text(
+                        fmtAmount(incomeTotal, prefix: '+'),
+                        style: AppTypography.labelLarge.copyWith(
+                          color: isLoading ? cs.onSurfaceVariant : sem.cashIn,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Cash Out
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Cash Out',
+                          style: AppTypography.labelSmall
+                              .copyWith(color: cs.onSurfaceVariant)),
+                      const SizedBox(height: 2),
+                      Text(
+                        fmtAmount(expenseTotal, prefix: '-'),
+                        style: AppTypography.labelLarge.copyWith(
+                          color: isLoading ? cs.onSurfaceVariant : sem.cashOut,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Net
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Net',
+                        style: AppTypography.labelSmall
+                            .copyWith(color: cs.onSurfaceVariant)),
+                    const SizedBox(height: 2),
+                    Text(
+                      net == null
+                          ? '---'
+                          : '${net >= 0 ? '+' : ''}$currencySymbol${net.abs().toStringAsFixed(0)}',
+                      style: AppTypography.labelLarge.copyWith(
+                        color: net == null
+                            ? cs.onSurfaceVariant
+                            : net >= 0
+                                ? sem.cashIn
+                                : sem.cashOut,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+              // Active filter chips + total count
+              if (chips.isNotEmpty || (total != null && total > 0)) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Wrap(
+                        spacing: 6,
+                        children: chips
+                            .map((label) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: cs.primary.withAlpha(15),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                        color: cs.primary.withAlpha(60)),
+                                  ),
+                                  child: Text(
+                                    label,
+                                    style: AppTypography.labelSmall.copyWith(
+                                      color: cs.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                    Text(
+                      total == null ? '...' : '$total txn${total == 1 ? '' : 's'}',
+                      style: AppTypography.labelSmall
+                          .copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Filter Icon Button (pinned right) ────────────────────────────────────────
 
 class _FilterIconButton extends StatelessWidget {
   const _FilterIconButton({
@@ -1166,56 +1386,176 @@ class _FilterIconButton extends StatelessWidget {
   }
 }
 
-// ─── Category Filter Bottom Sheet ───────────────────────────────────────────
+// ─── Unified Filter Bottom Sheet ─────────────────────────────────────────────
 
-class _CategoryFilterSheet extends StatefulWidget {
-  const _CategoryFilterSheet({
+// Period preset definitions
+const _kPeriodLabels = [
+  'Today',
+  'This Week',
+  'This Month',
+  'Last 3 Months',
+  'Last 6 Months',
+  'This Year',
+  'Custom',
+];
+
+/// Converts a period label to a [start, end] date range.
+/// Returns [null, null] for 'Custom' (caller handles pickers).
+List<DateTime?> _periodToDates(String label) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  switch (label) {
+    case 'Today':
+      return [today, DateTime(today.year, today.month, today.day, 23, 59, 59)];
+    case 'This Week':
+      final weekStart = today.subtract(Duration(days: today.weekday - 1));
+      return [weekStart, DateTime(now.year, now.month, now.day, 23, 59, 59)];
+    case 'This Month':
+      return [
+        DateTime(now.year, now.month, 1),
+        DateTime(now.year, now.month, now.day, 23, 59, 59)
+      ];
+    case 'Last 3 Months':
+      return [
+        DateTime(now.year, now.month - 2, 1),
+        DateTime(now.year, now.month, now.day, 23, 59, 59)
+      ];
+    case 'Last 6 Months':
+      return [
+        DateTime(now.year, now.month - 5, 1),
+        DateTime(now.year, now.month, now.day, 23, 59, 59)
+      ];
+    case 'This Year':
+      return [
+        DateTime(now.year, 1, 1),
+        DateTime(now.year, now.month, now.day, 23, 59, 59)
+      ];
+    default:
+      return [null, null];
+  }
+}
+
+class _FilterSheet extends StatefulWidget {
+  const _FilterSheet({
     required this.allCategories,
-    required this.selectedIds,
+    required this.selectedCategoryIds,
+    required this.activePeriodLabel,
+    required this.customStart,
+    required this.customEnd,
     required this.onApply,
   });
 
   final List<Category> allCategories;
-  final Set<String> selectedIds;
-  final void Function(Set<String> ids) onApply;
+  final Set<String> selectedCategoryIds;
+  final String? activePeriodLabel;
+  final DateTime? customStart;
+  final DateTime? customEnd;
+  final void Function({
+    required Set<String> categoryIds,
+    required String? periodLabel,
+    required DateTime? start,
+    required DateTime? end,
+  }) onApply;
 
   @override
-  State<_CategoryFilterSheet> createState() => _CategoryFilterSheetState();
+  State<_FilterSheet> createState() => _FilterSheetState();
 }
 
-class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
-  late Set<String> _pendingIds;
+class _FilterSheetState extends State<_FilterSheet> {
+  late Set<String> _pendingCategoryIds;
+  String? _pendingPeriodLabel;
+  DateTime? _pendingCustomStart;
+  DateTime? _pendingCustomEnd;
 
   @override
   void initState() {
     super.initState();
-    _pendingIds = Set.from(widget.selectedIds);
+    _pendingCategoryIds = Set.from(widget.selectedCategoryIds);
+    _pendingPeriodLabel = widget.activePeriodLabel;
+    _pendingCustomStart = widget.customStart;
+    _pendingCustomEnd = widget.customEnd;
   }
 
-  void _toggle(String id) {
+  void _toggleCategory(String id) {
     setState(() {
-      if (_pendingIds.contains(id)) {
-        _pendingIds.remove(id);
+      if (_pendingCategoryIds.contains(id)) {
+        _pendingCategoryIds.remove(id);
       } else {
-        _pendingIds.add(id);
+        _pendingCategoryIds.add(id);
       }
     });
   }
 
+  void _selectPeriod(String label) {
+    setState(() {
+      if (_pendingPeriodLabel == label) {
+        // Tap again to deselect
+        _pendingPeriodLabel = null;
+        _pendingCustomStart = null;
+        _pendingCustomEnd = null;
+      } else {
+        _pendingPeriodLabel = label;
+        if (label != 'Custom') {
+          final dates = _periodToDates(label);
+          _pendingCustomStart = dates[0];
+          _pendingCustomEnd = dates[1];
+        }
+      }
+    });
+  }
+
+  Future<void> _pickCustomDate(bool isStart) async {
+    final initial = isStart
+        ? (_pendingCustomStart ?? DateTime.now())
+        : (_pendingCustomEnd ?? DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (picked == null) return;
+    setState(() {
+      if (isStart) {
+        _pendingCustomStart = DateTime(picked.year, picked.month, picked.day);
+      } else {
+        _pendingCustomEnd =
+            DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+      }
+    });
+  }
+
+  void _clearAll() {
+    setState(() {
+      _pendingCategoryIds = {};
+      _pendingPeriodLabel = null;
+      _pendingCustomStart = null;
+      _pendingCustomEnd = null;
+    });
+  }
+
+  int get _totalActiveCount =>
+      (_pendingPeriodLabel != null ? 1 : 0) + _pendingCategoryIds.length;
+
+  bool get _hasAny =>
+      _pendingPeriodLabel != null || _pendingCategoryIds.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final incomeCategories =
         widget.allCategories.where((c) => c.isIncome).toList();
     final expenseCategories =
         widget.allCategories.where((c) => c.isExpense).toList();
+    final fmt = DateFormat('d MMM yyyy');
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.4,
-      maxChildSize: 0.9,
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
       builder: (_, scrollController) => Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: cs.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
@@ -1228,7 +1568,7 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.outlineVariant,
+                    color: cs.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1236,34 +1576,119 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
             ),
             // ── Header ────────────────────────────────────────────────────
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               child: Row(
                 children: [
-                  Text('Filter by Category',
+                  Text('Filters',
                       style: AppTypography.titleMedium
                           .copyWith(fontWeight: FontWeight.w700)),
                   const Spacer(),
-                  if (_pendingIds.isNotEmpty)
+                  if (_hasAny)
                     TextButton(
-                      onPressed: () => setState(() => _pendingIds = {}),
+                      onPressed: _clearAll,
                       child: Text(
                         'Clear all',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                        style: AppTypography.labelMedium
+                            .copyWith(color: cs.primary),
                       ),
                     ),
                 ],
               ),
             ),
             const Divider(height: 1),
-            // ── Scrollable category list ──────────────────────────────────
+
+            // ── Scrollable content ────────────────────────────────────────
             Expanded(
               child: ListView(
                 controller: scrollController,
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                 children: [
+
+                  // ── Date Period section ──────────────────────────────
+                  _SectionLabel(
+                    icon: Icons.calendar_today_rounded,
+                    label: 'Date Period',
+                    color: cs.primary,
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _kPeriodLabels.map((label) {
+                      final isSelected = _pendingPeriodLabel == label;
+                      return GestureDetector(
+                        onTap: () => _selectPeriod(label),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? cs.primary.withAlpha(25)
+                                : cs.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected
+                                  ? cs.primary
+                                  : cs.outlineVariant,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            label,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                  color: isSelected
+                                      ? cs.primary
+                                      : cs.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+
+                  // Custom date pickers (shown when Custom is selected)
+                  if (_pendingPeriodLabel == 'Custom') ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _DatePickerTile(
+                            label: 'From',
+                            date: _pendingCustomStart,
+                            formatter: fmt,
+                            onTap: () => _pickCustomDate(true),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _DatePickerTile(
+                            label: 'To',
+                            date: _pendingCustomEnd,
+                            formatter: fmt,
+                            onTap: () => _pickCustomDate(false),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 28),
+                  const Divider(height: 1),
+                  const SizedBox(height: 20),
+
+                  // ── Category section ─────────────────────────────────
+                  _SectionLabel(
+                    icon: Icons.label_outline_rounded,
+                    label: 'Category',
+                    color: cs.primary,
+                  ),
+                  const SizedBox(height: 12),
+
                   if (incomeCategories.isNotEmpty) ...[
                     _SectionLabel(
                       icon: Icons.arrow_downward_rounded,
@@ -1273,8 +1698,8 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
                     const SizedBox(height: 10),
                     _CategoryChipGrid(
                       categories: incomeCategories,
-                      selectedIds: _pendingIds,
-                      onToggle: _toggle,
+                      selectedIds: _pendingCategoryIds,
+                      onToggle: _toggleCategory,
                     ),
                     const SizedBox(height: 20),
                   ],
@@ -1287,8 +1712,8 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
                     const SizedBox(height: 10),
                     _CategoryChipGrid(
                       categories: expenseCategories,
-                      selectedIds: _pendingIds,
-                      onToggle: _toggle,
+                      selectedIds: _pendingCategoryIds,
+                      onToggle: _toggleCategory,
                     ),
                   ],
                   if (widget.allCategories.isEmpty)
@@ -1298,14 +1723,18 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
                         child: Text(
                           'No categories yet',
                           style: AppTypography.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: cs.onSurfaceVariant,
                           ),
                         ),
                       ),
                     ),
+
+                  // Bottom padding so last item isn't behind the button
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
+
             // ── Apply button ──────────────────────────────────────────────
             SafeArea(
               child: Padding(
@@ -1315,20 +1744,41 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () => widget.onApply(_pendingIds),
+                    onPressed: () {
+                      // Validate custom range before applying
+                      if (_pendingPeriodLabel == 'Custom' &&
+                          (_pendingCustomStart == null ||
+                              _pendingCustomEnd == null)) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Please select both From and To dates')),
+                        );
+                        return;
+                      }
+                      widget.onApply(
+                        categoryIds: _pendingCategoryIds,
+                        periodLabel: _pendingPeriodLabel,
+                        start: _pendingPeriodLabel != null
+                            ? _pendingCustomStart
+                            : null,
+                        end: _pendingPeriodLabel != null
+                            ? _pendingCustomEnd
+                            : null,
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      backgroundColor: cs.primary,
+                      foregroundColor: cs.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 0,
                     ),
                     child: Text(
-                      _pendingIds.isEmpty
+                      _totalActiveCount == 0
                           ? 'Show All'
-                          : 'Apply (${_pendingIds.length})',
+                          : 'Apply ($_totalActiveCount)',
                       style: AppTypography.labelLarge.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -1336,6 +1786,62 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
                     ),
                   ),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Date Picker Tile ─────────────────────────────────────────────────────────
+
+class _DatePickerTile extends StatelessWidget {
+  const _DatePickerTile({
+    required this.label,
+    required this.date,
+    required this.formatter,
+    required this.onTap,
+  });
+
+  final String label;
+  final DateTime? date;
+  final DateFormat formatter;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final hasDate = date != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: hasDate
+              ? cs.primary.withAlpha(15)
+              : cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: hasDate ? cs.primary : cs.outlineVariant,
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: AppTypography.labelSmall
+                    .copyWith(color: cs.onSurfaceVariant)),
+            const SizedBox(height: 4),
+            Text(
+              hasDate ? formatter.format(date!) : 'Tap to select',
+              style: AppTypography.labelMedium.copyWith(
+                color: hasDate ? cs.primary : cs.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

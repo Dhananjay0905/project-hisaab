@@ -14,6 +14,9 @@ class User extends Equatable {
   final double? monthlyBudget;
   final DateTime createdAt;
   final DateTime? policyAcceptedAt;
+  /// True when the backend's current policyVersion is newer than the user's
+  /// last acceptance — the auth notifier will emit [AuthPolicyPending].
+  final bool policyRequiresReAcceptance;
 
   const User({
     required this.id,
@@ -26,6 +29,7 @@ class User extends Equatable {
     this.monthlyBudget,
     required this.createdAt,
     this.policyAcceptedAt,
+    this.policyRequiresReAcceptance = false,
   });
 
   User copyWith({
@@ -39,6 +43,7 @@ class User extends Equatable {
     double? monthlyBudget,
     DateTime? createdAt,
     DateTime? policyAcceptedAt,
+    bool? policyRequiresReAcceptance,
   }) {
     return User(
       id: id ?? this.id,
@@ -51,6 +56,8 @@ class User extends Equatable {
       monthlyBudget: monthlyBudget ?? this.monthlyBudget,
       createdAt: createdAt ?? this.createdAt,
       policyAcceptedAt: policyAcceptedAt ?? this.policyAcceptedAt,
+      policyRequiresReAcceptance:
+          policyRequiresReAcceptance ?? this.policyRequiresReAcceptance,
     );
   }
 
@@ -66,5 +73,6 @@ class User extends Equatable {
         monthlyBudget,
         createdAt,
         policyAcceptedAt,
+        policyRequiresReAcceptance,
       ];
 }

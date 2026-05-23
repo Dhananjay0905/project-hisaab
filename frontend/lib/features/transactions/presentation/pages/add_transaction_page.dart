@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../../../../core/error/failures.dart';
 import '../../../../core/services/upi_transaction_data.dart';
 import '../../../../core/theme/semantic_colors.dart';
 import '../../../categories/domain/entities/category.dart';
@@ -34,6 +35,7 @@ class AddTransactionPage extends ConsumerStatefulWidget {
     this.initialDate,
     this.editTransaction,
     this.upiData,
+    this.upiIsPartial = false,
   });
   final String initialType;
   final DateTime? initialDate;
@@ -41,6 +43,9 @@ class AddTransactionPage extends ConsumerStatefulWidget {
   final Transaction? editTransaction;
   /// When provided, the page opens with OCR-parsed UPI transaction data pre-filled.
   final UpiTransactionData? upiData;
+  /// True when [upiData] was parsed from a screenshot but the amount field is
+  /// missing — triggers the amber "partial data" banner instead of the teal one.
+  final bool upiIsPartial;
 
   @override
   ConsumerState<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -115,7 +120,6 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
       // Title and note are intentionally NOT pre-filled — user writes their own.
       _showUpiBanner = upi.hasAnyData;
     }
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(categorySpendProvider((null, null)).future).ignore();
     });
@@ -232,7 +236,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _errorMessage =
+            e is Failure ? e.message : e.toString().replaceAll('Exception: ', '');
         _isSubmitting = false;
       });
     }
@@ -267,7 +272,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _errorMessage =
+            e is Failure ? e.message : e.toString().replaceAll('Exception: ', '');
         _isSubmitting = false;
       });
     }
@@ -380,6 +386,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                       padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
                       child: _UpiBanner(
+                        isPartial: widget.upiIsPartial,
                         onDismiss: () => setState(() => _showUpiBanner = false),
                       ),
                     ),
@@ -572,8 +579,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                                       )
                                     : Text(
                                         _type == 'INCOME'
-                                            ? 'Add Income'
-                                            : 'Add Expense',
+                                            ? 'Cash In'
+                                            : 'Cash Out',
                                         style: AppTypography.labelLarge.copyWith(
                                           color: ThemeData.estimateBrightnessForColor(accentColor) == Brightness.dark
                                               ? Colors.white
@@ -666,14 +673,14 @@ class _TypeToggle extends StatelessWidget {
       child: Row(
         children: [
           _TypeOption(
-            label: 'Expense',
+            label: 'Cash Out',
             emoji: '📤',
             isActive: activeType == 'EXPENSE',
             activeColor: sem.cashOut,
             onTap: () => onToggle('EXPENSE'),
           ),
           _TypeOption(
-            label: 'Income',
+            label: 'Cash In',
             emoji: '📥',
             isActive: activeType == 'INCOME',
             activeColor: sem.cashIn,
@@ -1063,14 +1070,30 @@ class _TimePicker extends StatelessWidget {
 // ─── UPI Auto-fill Banner ─────────────────────────────────────────────────────
 
 /// Shown when the Add Transaction modal is opened from a UPI screenshot share.
-/// Lets the user know the fields were auto-filled and they should verify them.
+///
+/// Two visual variants:
+///  • [isPartial] = false (default) — teal ✨ banner: all key fields were read.
+///  • [isPartial] = true — amber ⚠️ banner: amount was missing, user must fill it.
 class _UpiBanner extends StatelessWidget {
-  const _UpiBanner({required this.onDismiss});
+  const _UpiBanner({required this.onDismiss, this.isPartial = false});
   final VoidCallback onDismiss;
+  final bool isPartial;
 
   @override
   Widget build(BuildContext context) {
-    const bannerColor = Color(0xFF00796B); // teal-700
+    // Teal for full data, amber for partial.
+    final bannerColor = isPartial
+        ? const Color(0xFFE65100) // deep-orange / amber
+        : const Color(0xFF00796B); // teal-700
+
+    final icon = isPartial ? '⚠️' : '✨';
+    final title = isPartial
+        ? "Couldn't read all details"
+        : 'Filled from UPI screenshot';
+    final body = isPartial
+        ? 'Please fill in the missing fields before saving.'
+        : 'Please verify the details before saving.';
+
     return AnimatedSize(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
@@ -1084,21 +1107,21 @@ class _UpiBanner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Text('✨', style: TextStyle(fontSize: 16)),
+            Text(icon, style: const TextStyle(fontSize: 16)),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Filled from UPI screenshot',
+                    title,
                     style: AppTypography.labelSmall.copyWith(
                       color: bannerColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
-                    'Please verify the details before saving.',
+                    body,
                     style: AppTypography.labelSmall.copyWith(
                       color: bannerColor.withValues(alpha: 0.8),
                     ),

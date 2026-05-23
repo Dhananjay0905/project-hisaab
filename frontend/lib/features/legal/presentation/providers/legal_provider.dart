@@ -42,6 +42,8 @@ class LegalSection {
       case 'balance_rounded': return Icons.balance_rounded;
       case 'cut_outlined': return Icons.cut_outlined;
       case 'article_outlined': return Icons.article_outlined;
+      case 'phone_android': return Icons.phone_android_rounded;
+      case 'share_outlined': return Icons.share_outlined;
       default: return Icons.description_outlined;
     }
   }

@@ -27,6 +27,8 @@ class ShareIntentState {
     this.isProcessing = false,
     this.error,
     this.intentId = 0,
+    this.isNotUpiReceipt = false,
+    this.isOcrError = false,
   });
 
   final UpiTransactionData? data;
@@ -36,6 +38,14 @@ class ShareIntentState {
   /// Monotonically increasing ID. Every new intent bumps this, letting
   /// listeners detect "new data" even after a consume() → new-data cycle.
   final int intentId;
+
+  /// True when the shared image was determined not to be a UPI receipt
+  /// (e.g. a random photo). App should show a snackbar rather than the modal.
+  final bool isNotUpiReceipt;
+
+  /// True when OCR threw an unexpected exception. App should show an error
+  /// snackbar rather than the modal.
+  final bool isOcrError;
 
   bool get hasData => data != null && data!.hasAnyData;
 }
@@ -112,20 +122,30 @@ class ShareIntentNotifier extends StateNotifier<ShareIntentState> {
       final upiData = await UpiOcrService.instance.parseScreenshot(imagePath);
       debugPrint('[ShareIntent] OCR result #$thisIntentId: $upiData');
 
-      // Only update if this is still the latest intent
+      // Only update if this is still the latest intent.
       if (thisIntentId == _nextIntentId - 1) {
-        state = ShareIntentState(
-          data: upiData,
-          isProcessing: false,
-          intentId: thisIntentId,
-        );
+        if (upiData.isNotUpiReceipt) {
+          // Shared image is not a UPI receipt — signal the app to show a snackbar.
+          state = ShareIntentState(
+            isNotUpiReceipt: true,
+            isProcessing: false,
+            intentId: thisIntentId,
+          );
+        } else {
+          state = ShareIntentState(
+            data: upiData,
+            isProcessing: false,
+            intentId: thisIntentId,
+          );
+        }
       }
     } catch (e) {
       debugPrint('[ShareIntent] OCR error #$thisIntentId: $e');
       if (thisIntentId == _nextIntentId - 1) {
         state = ShareIntentState(
           isProcessing: false,
-          error: 'Could not read screenshot: $e',
+          isOcrError: true,
+          error: e.toString(),
           intentId: thisIntentId,
         );
       }

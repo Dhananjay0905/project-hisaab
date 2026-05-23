@@ -15,6 +15,7 @@ class UserModel extends User {
     super.monthlyBudget,
     required super.createdAt,
     super.policyAcceptedAt,
+    super.policyRequiresReAcceptance,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -33,6 +34,8 @@ class UserModel extends User {
       policyAcceptedAt: json['policyAcceptedAt'] != null
           ? DateTime.parse(json['policyAcceptedAt'] as String)
           : null,
+      policyRequiresReAcceptance:
+          json['policyRequiresReAcceptance'] as bool? ?? false,
     );
   }
 

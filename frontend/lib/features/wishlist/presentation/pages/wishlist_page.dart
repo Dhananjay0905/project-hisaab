@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/widgets/app_error_widget.dart';
+import '../../../../core/widgets/skeleton_loading.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../domain/entities/wishlist_item.dart';
 import '../providers/wishlist_provider.dart';
@@ -53,15 +55,11 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
               ),
             ),
             wishlistAsync.when(
-              loading: () => const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, _) => SliverFillRemaining(
-                child: Center(
-                    child: Text(
-                  'Failed to load wishlist',
-                  style: AppTypography.bodySmall.copyWith(color: Theme.of(context).colorScheme.error),
-                )),
+              loading: () => const WishlistSkeleton(),
+              error: (e, _) => AppErrorWidget.sliver(
+                title: 'Failed to load wishlist',
+                message: e.toString().replaceAll('Exception:', '').trim(),
+                onRetry: () => ref.invalidate(wishlistProvider),
               ),
               data: (items) {
                 if (items.isEmpty) {

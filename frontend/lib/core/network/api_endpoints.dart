@@ -83,4 +83,5 @@ abstract final class ApiEndpoints {
   static const String analyticsMonthly    = '/analytics/monthly';
   static const String analyticsCategories = '/analytics/categories';
   static const String legal               = '/legal';
+  static const String appConfig           = '/app/config';
 }

@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_error_widget.dart';
+import '../../../../core/widgets/skeleton_loading.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../../../../core/error/exceptions.dart';
+import '../../../../core/error/failures.dart';
 import '../../../../core/theme/semantic_colors.dart';
 import '../../../wishlist/domain/entities/wishlist_item.dart';
 import '../../../wishlist/presentation/providers/wishlist_provider.dart';
@@ -65,12 +69,11 @@ class _SavingsPageState extends ConsumerState<SavingsPage> {
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md, AppSpacing.sm, AppSpacing.md, 120),
               sliver: savingsAsync.when(
-              loading: () => const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator())),
-              error: (e, _) => SliverFillRemaining(
-                  child: Center(
-                      child: Text('Error: $e',
-                          style: TextStyle(color: Theme.of(context).colorScheme.error)))),
+              loading: () => const SavingsSkeleton(),
+              error: (e, _) => AppErrorWidget.sliver(
+                message: e.toString().replaceAll('Exception:', '').trim(),
+                onRetry: () => ref.invalidate(savingsProvider),
+              ),
               data: (savings) {
                 final wishlistItems = (wishlistAsync.valueOrNull ?? [])
                     .where((i) => !i.isPurchased)
@@ -164,45 +167,103 @@ class _SavingsPageState extends ConsumerState<SavingsPage> {
     );
   }
 
-  void _showEditTotalDialog(BuildContext context) {
+  Future<void> _showEditTotalDialog(BuildContext context) async {
     final ctrl = TextEditingController();
-    showDialog<void>(
+    await showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.md)),
-        title: Text('Update Total Savings', style: AppTypography.titleMedium),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
-          ],
-          decoration: InputDecoration(
-            hintText: 'Enter amount',
-            prefixText: '₹ ',
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.sm)),
+      builder: (dialogCtx) {
+        String? errorMsg;
+        bool isLoading = false;
+
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            backgroundColor:
+                Theme.of(context).colorScheme.surfaceContainerLowest,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.md)),
+            title:
+                Text('Update Total Savings', style: AppTypography.titleMedium),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: ctrl,
+                  autofocus: true,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                        RegExp(r'^\d+\.?\d{0,2}'))
+                  ],
+                  decoration: InputDecoration(
+                    hintText: 'Enter amount',
+                    prefixText: '₹ ',
+                    border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.sm)),
+                  ),
+                ),
+                // Inline error message
+                if (errorMsg != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    errorMsg!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed:
+                    isLoading ? null : () => Navigator.pop(dialogCtx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        // Dismiss keyboard immediately on tap
+                        FocusScope.of(ctx).unfocus();
+                        final val = double.tryParse(ctrl.text);
+                        if (val == null) return;
+                        setDialogState(() {
+                          isLoading = true;
+                          errorMsg = null;
+                        });
+                        try {
+                          await ref
+                              .read(savingsProvider.notifier)
+                              .updateTotal(val);
+                          if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                        } catch (e) {
+                          setDialogState(() {
+                            isLoading = false;
+                            errorMsg = e is AppException
+                                ? e.message
+                                : e is Failure
+                                    ? e.message
+                                    : 'Something went wrong. Please try again.';
+                          });
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final val = double.tryParse(ctrl.text);
-              if (val != null) {
-                ref.read(savingsProvider.notifier).updateTotal(val);
-              }
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

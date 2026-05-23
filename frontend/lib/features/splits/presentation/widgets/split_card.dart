@@ -74,8 +74,8 @@ class _SplitCardState extends ConsumerState<SplitCard>
     }
 
     if (!mounted) return;
-    // Returns null (cancelled), or a record of {createTransaction, amount}
-    final result = await showDialog<({bool createTransaction, double amount})>(
+    // Returns null (cancelled), or a record of {createTransaction, amount, categoryId}
+    final result = await showDialog<({bool createTransaction, double amount, String? categoryId})>(
       context: context,
       builder: (ctx) => _PayDialog(
         name: participant.name,
@@ -90,6 +90,7 @@ class _SplitCardState extends ConsumerState<SplitCard>
       participant.id,
       createTransaction: result.createTransaction,
       paidAmount: result.amount,
+      categoryId: result.categoryId,
     );
   }
 
@@ -294,7 +295,7 @@ class _SplitCardState extends ConsumerState<SplitCard>
                             Text(s.title, style: AppTypography.titleSmall),
                             const SizedBox(height: 2),
                             Text(
-                              DateFormat('MMM d, yyyy').format(s.date),
+                              DateFormat('MMM d, yyyy · h:mm a').format(s.date.toLocal()),
                               style: AppTypography.bodySmall.copyWith(
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
@@ -526,9 +527,10 @@ class _PaidBadge extends StatelessWidget {
 
 /// Dialog shown when marking a participant as paid.
 /// Lets the user:
-///   1. Enter the actual amount received (may differ, e.g. friend gives ₹60 for ₹56 split).
+///   1. Enter the actual amount received.
 ///   2. Decide whether to log it as a Cash In transaction.
-class _PayDialog extends StatefulWidget {
+///   3. Pick the income category for the transaction.
+class _PayDialog extends ConsumerStatefulWidget {
   const _PayDialog({
     required this.name,
     required this.expectedAmount,
@@ -540,17 +542,18 @@ class _PayDialog extends StatefulWidget {
   final NumberFormat fmt;
 
   @override
-  State<_PayDialog> createState() => _PayDialogState();
+  ConsumerState<_PayDialog> createState() => _PayDialogState();
 }
 
-class _PayDialogState extends State<_PayDialog> {
+class _PayDialogState extends ConsumerState<_PayDialog> {
   late final TextEditingController _amountCtrl;
   bool _logAsIncome = true;
+  Category? _selectedCategory;
+  bool _categoryResolved = false;
 
   @override
   void initState() {
     super.initState();
-    // Pre-fill with the expected split amount, no trailing .00 for whole numbers
     final exp = widget.expectedAmount;
     _amountCtrl = TextEditingController(
       text: exp.truncateToDouble() == exp
@@ -567,87 +570,163 @@ class _PayDialogState extends State<_PayDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final incomeCategories = ref.watch(incomeCategoriesProvider);
+
+    // Pre-select "Other Income" on first load
+    if (!_categoryResolved && incomeCategories.isNotEmpty) {
+      _categoryResolved = true;
+      final defaultCat = incomeCategories
+          .where((c) => c.name == 'Other Income')
+          .firstOrNull ?? incomeCategories.first;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _selectedCategory = defaultCat);
+      });
+    }
+
     return AlertDialog(
       title: Text('${widget.name} paid! 🎉'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Their share: ₹${widget.fmt.format(widget.expectedAmount)}',
-            style: AppTypography.bodySmall.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          // Amount field
-          Text(
-            'Amount actually received',
-            style: AppTypography.labelMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Their share: ₹${widget.fmt.format(widget.expectedAmount)}',
+              style: AppTypography.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            child: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    '₹',
-                    style: AppTypography.titleLarge.copyWith(
-                      color: SemanticColors.of(context).cashIn,
+            const SizedBox(height: AppSpacing.md),
+            // Amount field
+            Text(
+              'Amount actually received',
+              style: AppTypography.labelMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      '₹',
+                      style: AppTypography.titleLarge.copyWith(
+                        color: SemanticColors.of(context).cashIn,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _amountCtrl,
-                    autofocus: true,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-                    ],
-                    style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: '0',
+                  Expanded(
+                    child: TextField(
+                      controller: _amountCtrl,
+                      autofocus: true,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                      ],
+                      style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText: '0',
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          // Log as income toggle
-          InkWell(
-            onTap: () => setState(() => _logAsIncome = !_logAsIncome),
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                Checkbox(
-                  value: _logAsIncome,
-                  onChanged: (v) => setState(() => _logAsIncome = v ?? true),
-                  activeColor: SemanticColors.of(context).cashIn,
+            const SizedBox(height: AppSpacing.md),
+            // Log as income toggle
+            InkWell(
+              onTap: () => setState(() => _logAsIncome = !_logAsIncome),
+              borderRadius: BorderRadius.circular(8),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: _logAsIncome,
+                    onChanged: (v) => setState(() => _logAsIncome = v ?? true),
+                    activeColor: SemanticColors.of(context).cashIn,
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Add as Cash In transaction',
+                      style: AppTypography.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Income category picker — shown only when logging as income
+            if (_logAsIncome) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Income Category',
+                style: AppTypography.labelSmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
                 ),
-                Expanded(
-                  child: Text(
-                    'Add as Cash In transaction',
-                    style: AppTypography.bodySmall,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              if (incomeCategories.isEmpty)
+                const SizedBox(
+                  height: 36,
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                )
+              else
+                SizedBox(
+                  height: 36,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: incomeCategories.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 6),
+                    itemBuilder: (ctx, i) {
+                      final cat = incomeCategories[i];
+                      final isSelected = _selectedCategory?.id == cat.id;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedCategory = cat),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? SemanticColors.of(ctx).cashIn
+                                : Theme.of(ctx).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(cat.emoji,
+                                  style: const TextStyle(fontSize: 13)),
+                              const SizedBox(width: 4),
+                              Text(
+                                cat.name,
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Theme.of(ctx).colorScheme.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ],
-            ),
-          ),
-        ],
+            ],
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -655,13 +734,18 @@ class _PayDialogState extends State<_PayDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: SemanticColors.of(context).cashIn),
+          style: FilledButton.styleFrom(
+              backgroundColor: SemanticColors.of(context).cashIn),
           onPressed: () {
             final entered = double.tryParse(_amountCtrl.text.trim());
             if (entered == null || entered <= 0) return;
             Navigator.pop(
               context,
-              (createTransaction: _logAsIncome, amount: entered),
+              (
+                createTransaction: _logAsIncome,
+                amount: entered,
+                categoryId: _logAsIncome ? _selectedCategory?.id : null,
+              ),
             );
           },
           child: const Text('Confirm'),

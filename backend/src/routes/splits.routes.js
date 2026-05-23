@@ -26,6 +26,7 @@ const createValidation = [
     .withMessage('Participant names must be non-empty strings.'),
   body('note').optional().trim(),
   body('date').optional().isISO8601().withMessage('date must be a valid ISO date.'),
+  body('logAsExpense').optional().isBoolean().withMessage('logAsExpense must be a boolean.'),
 ];
 
 const updateValidation = [

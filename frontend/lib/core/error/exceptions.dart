@@ -8,7 +8,7 @@ sealed class AppException implements Exception {
   const AppException(this.message, {this.statusCode});
 
   @override
-  String toString() => '$runtimeType: $message (status: $statusCode)';
+  String toString() => message;
 }
 
 /// Network / connectivity issue

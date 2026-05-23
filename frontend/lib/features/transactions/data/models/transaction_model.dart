@@ -60,27 +60,34 @@ class TransactionModel extends Transaction {
   }
 }
 
-class TransactionPageModel {
+class TransactionPageModel extends TransactionPage {
+  /// Typed as [List<TransactionModel>] for covariant access to model-specific methods.
+  @override
   final List<TransactionModel> items;
-  final int total;
-  final int page;
-  final int limit;
-  final int pages;
-  final bool hasNext;
-  final bool hasPrev;
 
   const TransactionPageModel({
     required this.items,
-    required this.total,
-    required this.page,
-    required this.limit,
-    required this.pages,
-    required this.hasNext,
-    required this.hasPrev,
-  });
+    required int total,
+    required int page,
+    required int limit,
+    required int pages,
+    required bool hasNext,
+    required bool hasPrev,
+    super.incomeTotal = 0.0,
+    super.expenseTotal = 0.0,
+  }) : super(
+          items: items,
+          total: total,
+          page: page,
+          limit: limit,
+          pages: pages,
+          hasNext: hasNext,
+          hasPrev: hasPrev,
+        );
 
   factory TransactionPageModel.fromJson(Map<String, dynamic> json) {
     final pagination = json['pagination'] as Map<String, dynamic>;
+    final totals = json['totals'] as Map<String, dynamic>? ?? {};
     return TransactionPageModel(
       items: (json['items'] as List<dynamic>)
           .map((e) => TransactionModel.fromJson(e as Map<String, dynamic>))
@@ -91,6 +98,8 @@ class TransactionPageModel {
       pages: pagination['pages'] as int,
       hasNext: pagination['hasNext'] as bool,
       hasPrev: pagination['hasPrev'] as bool,
+      incomeTotal: (totals['incomeTotal'] as num?)?.toDouble() ?? 0.0,
+      expenseTotal: (totals['expenseTotal'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

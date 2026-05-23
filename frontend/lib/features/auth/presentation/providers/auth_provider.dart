@@ -85,8 +85,10 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
     try {
       final user = await _repo.getMe();
       _hasInitialized = true;
-      // If user hasn't accepted PP/ToS yet, hold them at the policy gate
-      if (user.policyAcceptedAt == null) return AuthPolicyPending(user);
+      // Gate on policy: null acceptance OR server signals re-acceptance needed
+      if (user.policyAcceptedAt == null || user.policyRequiresReAcceptance) {
+        return AuthPolicyPending(user);
+      }
       return AuthAuthenticated(user);
     } on AuthFailure {
       // Server explicitly rejected the refresh token → real logout.
@@ -114,8 +116,10 @@ class AuthNotifier extends AsyncNotifier<AuthStatus> {
     state = await AsyncValue.guard(() async {
       final result = await _repo.login(email: email, password: password);
       final user = result.user;
-      // Gate on policy acceptance before granting full access
-      if (user.policyAcceptedAt == null) return AuthPolicyPending(user);
+      // Gate on policy acceptance OR server signals re-acceptance needed
+      if (user.policyAcceptedAt == null || user.policyRequiresReAcceptance) {
+        return AuthPolicyPending(user);
+      }
       return AuthAuthenticated(user, accountRecovered: result.accountRecovered);
     });
   }

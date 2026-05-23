@@ -8,6 +8,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_error_widget.dart';
+import '../../../../core/widgets/skeleton_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -50,15 +52,11 @@ class CategoriesPage extends ConsumerWidget {
             ),
           ),
           asyncCategories.when(
-            loading: () => const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (e, _) => SliverFillRemaining(
-              child: Center(
-                child: Text('Failed to load categories',
-                    style: AppTypography.bodyMedium
-                        .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              ),
+            loading: () => const CategoriesSkeleton(),
+            error: (e, _) => AppErrorWidget.sliver(
+              title: 'Failed to load categories',
+              message: e.toString().replaceAll('Exception:', '').trim(),
+              onRetry: () => ref.invalidate(categoriesProvider),
             ),
             data: (categories) {
               final income = categories.where((c) => c.isIncome).toList();

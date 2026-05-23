@@ -33,17 +33,9 @@ class TransactionRepositoryImpl {
         sortBy: sortBy,
         sortOrder: sortOrder,
       );
-      return TransactionPage(
-        items: model.items,
-        total: model.total,
-        page: model.page,
-        limit: model.limit,
-        pages: model.pages,
-        hasNext: model.hasNext,
-        hasPrev: model.hasPrev,
-      );
-    } on NetworkException {
-      throw const NetworkFailure();
+      return model;
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -54,8 +46,8 @@ class TransactionRepositoryImpl {
       return await _remote.getTransaction(id);
     } on NotFoundException {
       throw const NotFoundFailure();
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -82,8 +74,8 @@ class TransactionRepositoryImpl {
       );
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message, fieldErrors: e.fieldErrors);
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -114,8 +106,8 @@ class TransactionRepositoryImpl {
       throw ValidationFailure(e.message, fieldErrors: e.fieldErrors);
     } on NotFoundException {
       throw const NotFoundFailure();
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -126,8 +118,8 @@ class TransactionRepositoryImpl {
       await _remote.deleteTransaction(id);
     } on NotFoundException {
       throw const NotFoundFailure();
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }

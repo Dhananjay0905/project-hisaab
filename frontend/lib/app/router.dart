@@ -35,6 +35,7 @@ import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/analytics/presentation/pages/analytics_page.dart';
 import '../shared/widgets/app_shell.dart';
 import '../core/services/upi_transaction_data.dart';
+import 'app.dart' show UpiIntentExtra;
 // Data providers — invalidated on sign-out
 import '../features/analytics/presentation/providers/analytics_provider.dart';
 import '../features/categories/presentation/providers/categories_provider.dart';
@@ -234,10 +235,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/add-transaction',
         pageBuilder: (_, state) {
-          final upiData = state.extra as UpiTransactionData?;
+          // The extra can be either:
+          //   • UpiIntentExtra — from a share intent (includes isPartial flag)
+          //   • UpiTransactionData — legacy path (edit, or other direct pushes)
+          //   • null — plain manual open
+          final extra = state.extra;
+          UpiTransactionData? upiData;
+          bool isPartial = false;
+          if (extra is UpiIntentExtra) {
+            upiData = extra.data;
+            isPartial = extra.isPartial;
+          } else if (extra is UpiTransactionData) {
+            upiData = extra;
+          }
           return _slideUpTransition(
             state,
-            AddTransactionPage(upiData: upiData),
+            AddTransactionPage(upiData: upiData, upiIsPartial: isPartial),
           );
         },
       ),

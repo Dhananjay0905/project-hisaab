@@ -82,6 +82,8 @@ class TransactionPage {
     required this.pages,
     required this.hasNext,
     required this.hasPrev,
+    this.incomeTotal = 0.0,
+    this.expenseTotal = 0.0,
   });
 
   final List<Transaction> items;
@@ -91,6 +93,14 @@ class TransactionPage {
   final int pages;
   final bool hasNext;
   final bool hasPrev;
+
+  /// Sum of all INCOME transactions matching the current filter (server-side aggregate).
+  final double incomeTotal;
+
+  /// Sum of all EXPENSE transactions matching the current filter (server-side aggregate).
+  final double expenseTotal;
+
+  double get net => incomeTotal - expenseTotal;
 
   static const empty = TransactionPage(
     items: [],

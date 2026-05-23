@@ -63,11 +63,13 @@ async function listSplits(userId) {
  * @param {string}   [data.note]
  * @param {string}   [data.date]            — ISO date string
  */
-async function createSplit(userId, { title, totalAmount, participantNames, note, date, categoryId }) {
+async function createSplit(userId, { title, totalAmount, participantNames, note, date, categoryId, logAsExpense }) {
   const count = participantNames.length;
   if (count < 1) throw new Error('At least one participant required.');
 
   const perPerson = Number((totalAmount / (count + 1)).toFixed(2)); // +1 = you
+
+  const splitDate = date ? new Date(date) : new Date();
 
   const split = await prisma.split.create({
     data: {
@@ -76,7 +78,7 @@ async function createSplit(userId, { title, totalAmount, participantNames, note,
       note: note ? encrypt(note) : null,
       totalAmount,
       categoryId: categoryId || null,
-      date: date ? new Date(date) : new Date(),
+      date: splitDate,
       participants: {
         create: participantNames.map((name) => ({
           name: encrypt(name.trim()),
@@ -86,6 +88,29 @@ async function createSplit(userId, { title, totalAmount, participantNames, note,
     },
     include: { participants: { orderBy: { createdAt: 'asc' } }, category: true },
   });
+
+  // Optionally create an EXPENSE transaction for the full bill amount.
+  if (logAsExpense) {
+    let expenseCategoryId = categoryId || null;
+    if (!expenseCategoryId) {
+      const otherExpenses = await prisma.category.findFirst({
+        where: { userId, name: 'Other Expenses', isDefault: true },
+      });
+      expenseCategoryId = otherExpenses?.id ?? null;
+    }
+    const txNote = `${count + 1} people · ₹${perPerson}/person`;
+    await prisma.transaction.create({
+      data: {
+        userId,
+        categoryId: expenseCategoryId,
+        title: encrypt(title),
+        amount: totalAmount,
+        type: 'EXPENSE',
+        note: encrypt(txNote),
+        date: splitDate,
+      },
+    });
+  }
 
   return decryptSplit(split);
 }
@@ -134,7 +159,7 @@ async function deleteSplit(userId, splitId) {
  * @param {number}  [paidAmount]      — actual amount received (may differ from split share)
  * @returns {{ participant, transaction? }}
  */
-async function markParticipantPaid(userId, splitId, participantId, createTransaction, paidAmount) {
+async function markParticipantPaid(userId, splitId, participantId, createTransaction, paidAmount, incomeCategoryId) {
   // Verify ownership
   const split = await prisma.split.findFirst({
     where: { id: splitId, userId, deletedAt: null },
@@ -150,13 +175,15 @@ async function markParticipantPaid(userId, splitId, participantId, createTransac
   let transaction = null;
 
   if (createTransaction) {
-    // Find the split's category, or fall back to "Other Income"
-    let incomeCategoryId = split.categoryId || null;
-    if (!incomeCategoryId) {
+    // Use the explicitly provided income category; fall back to "Other Income".
+    // NOTE: We intentionally do NOT use split.categoryId here — that is the
+    // expense category for the original bill, not an income category.
+    let resolvedCategoryId = incomeCategoryId || null;
+    if (!resolvedCategoryId) {
       const otherIncome = await prisma.category.findFirst({
         where: { userId, name: 'Other Income', isDefault: true },
       });
-      incomeCategoryId = otherIncome?.id ?? null;
+      resolvedCategoryId = otherIncome?.id ?? null;
     }
 
     const decryptedSplitTitle = decrypt(split.title);
@@ -165,7 +192,7 @@ async function markParticipantPaid(userId, splitId, participantId, createTransac
     transaction = await prisma.transaction.create({
       data: {
         userId,
-        categoryId: incomeCategoryId,
+        categoryId: resolvedCategoryId,
         title: encrypt(`Split: ${decryptedSplitTitle} — from ${decryptedName}`),
         amount: paidAmount != null ? paidAmount : participant.amount,
         type: 'INCOME',

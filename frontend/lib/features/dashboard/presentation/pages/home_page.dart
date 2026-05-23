@@ -14,6 +14,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/app_error_widget.dart';
+import '../../../../core/widgets/skeleton_loading.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/providers/theme_mode_provider.dart';
@@ -162,8 +164,8 @@ class _HomePageState extends ConsumerState<HomePage> {
               // ── Content ──────────────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: summaryAsync.when(
-                  loading: () => const _LoadingState(),
-                  error: (e, _) => _ErrorState(
+                  loading: () => const HomeSkeleton(),
+                  error: (e, _) => AppErrorWidget(
                     message: e.toString().replaceAll('Exception:', '').trim(),
                     onRetry: () =>
                         ref.read(dashboardSummaryProvider.notifier).refresh(),
@@ -203,6 +205,7 @@ class _DashboardContentState extends ConsumerState<_DashboardContent> {
     final isSpendable = savings?.deductFromBalance ?? false;
     final displayBalance = isSpendable
         ? (widget.summary.currentBalance - (savings?.rawTotal ?? 0))
+            .clamp(0.0, double.infinity)
         : widget.summary.currentBalance;
 
     return Padding(
@@ -321,24 +324,7 @@ class _BalanceCard extends StatelessWidget {
                     ),
                   ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              _BalanceChip(
-                label: 'Income',
-                amount: fmt.format(summary.totalIncome),
-                icon: Icons.arrow_downward_rounded,
-                color: const Color(0xFF5CFD80),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              _BalanceChip(
-                label: 'Expenses',
-                amount: fmt.format(summary.totalExpenses),
-                icon: Icons.arrow_upward_rounded,
-                color: const Color(0xFFF74B6D),
-              ),
-            ],
-          ),
+
         ],
       ),
     );
@@ -347,61 +333,7 @@ class _BalanceCard extends StatelessWidget {
 
 
 
-class _BalanceChip extends StatelessWidget {
-  const _BalanceChip({
-    required this.label,
-    required this.amount,
-    required this.icon,
-    required this.color,
-  });
 
-  final String label;
-  final String amount;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(icon, color: color, size: 14),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: AppTypography.labelSmall.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
-                ),
-              ),
-              Text(
-                amount,
-                style: AppTypography.labelMedium.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─── Month Stats Row ──────────────────────────────────────────────────────────
 
@@ -740,51 +672,3 @@ class _TopCategoriesList extends StatelessWidget {
 
 // ─── Loading / Error States ───────────────────────────────────────────────────
 
-class _LoadingState extends StatelessWidget {
-  const _LoadingState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 120),
-      child: Center(
-        child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Column(
-        children: [
-          const SizedBox(height: 60),
-          Icon(Icons.cloud_off_rounded,
-              size: 56, color: Theme.of(context).colorScheme.outlineVariant),
-          const SizedBox(height: AppSpacing.md),
-          Text('Could not load data', style: AppTypography.titleSmall),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            message,
-            style: AppTypography.bodySmall
-                .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          FilledButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Try again'),
-          ),
-        ],
-      ),
-    );
-  }
-}

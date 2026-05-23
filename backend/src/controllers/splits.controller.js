@@ -34,23 +34,20 @@ async function getSplit(req, res, next) {
 
 async function createSplit(req, res, next) {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return sendError(res, 422, 'VALIDATION_ERROR', errors.array()[0].msg);
-  }
-
+  if (!errors.isEmpty()) return sendError(res, 422, 'VALIDATION_ERROR', errors.array()[0].msg);
   try {
-    const { title, totalAmount, participantNames, note, date } = req.body;
+    const { title, totalAmount, participantNames, note, date, categoryId, logAsExpense } = req.body;
     const split = await splitsService.createSplit(req.user.id, {
       title,
       totalAmount: Number(totalAmount),
       participantNames,
       note,
       date,
+      categoryId,
+      logAsExpense: Boolean(logAsExpense),
     });
     return sendSuccess(res, split, 201);
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 }
 
 // ── Update ────────────────────────────────────────────────────────────────────
@@ -87,13 +84,14 @@ async function deleteSplit(req, res, next) {
 
 async function markParticipantPaid(req, res, next) {
   try {
-    const { createTransaction = false, paidAmount } = req.body;
+    const { createTransaction = false, paidAmount, categoryId } = req.body;
     const result = await splitsService.markParticipantPaid(
       req.user.id,
       req.params.id,
       req.params.pid,
       Boolean(createTransaction),
       paidAmount != null ? Number(paidAmount) : undefined,
+      categoryId || null,
     );
     return sendSuccess(res, result);
   } catch (err) {

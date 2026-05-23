@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../dashboard/presentation/providers/summary_provider.dart';
+import '../../../transactions/presentation/providers/transactions_provider.dart';
 import '../../data/datasources/splits_remote_datasource.dart';
 import '../../data/models/split_model.dart';
 import '../../domain/entities/split.dart';
@@ -39,6 +40,7 @@ class SplitsNotifier extends AsyncNotifier<List<SplitGroup>> {
     String? note,
     DateTime? date,
     String? categoryId,
+    bool logAsExpense = false,
   }) async {
     final ds = ref.read(_splitsRemoteDataSourceProvider);
     final split = await ds.createSplit(
@@ -48,8 +50,13 @@ class SplitsNotifier extends AsyncNotifier<List<SplitGroup>> {
       note: note,
       date: date,
       categoryId: categoryId,
+      logAsExpense: logAsExpense,
     );
     state = AsyncData([split, ...state.valueOrNull ?? []]);
+    if (logAsExpense) {
+      ref.invalidate(dashboardSummaryProvider);
+      ref.invalidate(transactionsProvider);
+    }
     return split;
   }
 
@@ -74,7 +81,8 @@ class SplitsNotifier extends AsyncNotifier<List<SplitGroup>> {
     String splitId,
     String participantId, {
     required bool createTransaction,
-    double? paidAmount, // actual amount received (may differ from split share)
+    double? paidAmount,
+    String? categoryId,
   }) async {
     final ds = ref.read(_splitsRemoteDataSourceProvider);
     final updatedParticipant = await ds.markParticipantPaid(
@@ -82,6 +90,7 @@ class SplitsNotifier extends AsyncNotifier<List<SplitGroup>> {
       participantId,
       createTransaction: createTransaction,
       paidAmount: paidAmount,
+      categoryId: categoryId,
     );
 
     // Optimistically update local state

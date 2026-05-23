@@ -15,6 +15,7 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { requireAuth } = require('./middleware/authMiddleware');
 const { requirePolicy } = require('./middleware/requirePolicy');
 const authRoutes = require('./routes/auth.routes');
+const appRoutes = require('./routes/app.routes');
 const categoriesRoutes = require('./routes/categories.routes');
 const transactionsRoutes = require('./routes/transactions.routes');
 const summaryRoutes = require('./routes/summary.routes');
@@ -38,9 +39,9 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'none'"],
-        styleSrc:   ["'unsafe-inline'"],   // inline styles in verification HTML only
-        imgSrc:     ["'none'"],
-        scriptSrc:  ["'none'"],
+        styleSrc: ["'unsafe-inline'"],   // inline styles in verification HTML only
+        imgSrc: ["'none'"],
+        scriptSrc: ["'none'"],
         frameAncestors: ["'none'"],
       },
     },
@@ -122,6 +123,10 @@ app.get('/api/legal', (_req, res) => {
   const legalData = require('./data/legal.json');
   return res.json(legalData);
 });
+
+// Public App config — version gate + update messages (no auth required)
+app.use('/api/app', appRoutes);
+
 
 // ── Global rate limiter ───────────────────────────────────────────────────────
 app.use(globalLimiter);

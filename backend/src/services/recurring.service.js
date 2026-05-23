@@ -9,6 +9,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { createError } = require('../middleware/errorHandler');
 const { encrypt, decrypt } = require('../utils/encrypt');
+const { getUserBalance, assertSufficientBalance } = require('../utils/balance.utils');
 
 const prisma = new PrismaClient();
 
@@ -169,6 +170,15 @@ async function confirmDue(userId, id) {
 
   if (!item.isActive) {
     throw createError('Recurring transaction is paused.', 400, 'RECURRING_PAUSED');
+  }
+
+  // ── Balance check (EXPENSE only) ──────────────────────────────────────────
+  if (item.type === 'EXPENSE') {
+    const balance = await getUserBalance(userId, prisma);
+    assertSufficientBalance(
+      balance - parseFloat(item.amount),
+      'Insufficient balance. This recurring expense would push your balance below zero.'
+    );
   }
 
   const nextDueDate = advanceDate(item.nextDueDate, item.frequency);

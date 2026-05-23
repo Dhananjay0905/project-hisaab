@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../../../../core/widgets/app_error_widget.dart';
 import '../providers/legal_provider.dart';
 
 class PrivacyPolicyPage extends ConsumerWidget {
@@ -118,47 +119,10 @@ class PrivacyPolicyPage extends ConsumerWidget {
                   loading: () => const Center(
                     child: CircularProgressIndicator(),
                   ),
-                  error: (err, stack) => Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.wifi_off_rounded, size: 48, color: cs.error),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Failed to load Privacy Policy',
-                            style: AppTypography.titleMedium.copyWith(
-                              color: cs.onSurface,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Please check your internet connection and try again.',
-                            textAlign: TextAlign.center,
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: cs.primary,
-                              foregroundColor: cs.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                            ),
-                            onPressed: () => ref.invalidate(legalProvider),
-                            icon: const Icon(Icons.refresh_rounded),
-                            label: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    ),
+                  error: (err, stack) => AppErrorWidget(
+                    title: 'Failed to load Privacy Policy',
+                    message: 'Please check your internet connection and try again.',
+                    onRetry: () => ref.invalidate(legalProvider),
                   ),
                 ),
               ),

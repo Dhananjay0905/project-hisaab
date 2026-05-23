@@ -25,6 +25,7 @@ class SplitsRemoteDataSource {
     String? note,
     DateTime? date,
     String? categoryId,
+    bool logAsExpense = false,
   }) async {
     final response = await _client.post<Map<String, dynamic>>(
       ApiEndpoints.splits,
@@ -35,6 +36,7 @@ class SplitsRemoteDataSource {
         if (note != null && note.isNotEmpty) 'note': note,
         if (date != null) 'date': date.toIso8601String(),
         if (categoryId != null) 'categoryId': categoryId,
+        'logAsExpense': logAsExpense,
       },
     );
     final data = response.data!['data'] as Map<String, dynamic>;
@@ -63,12 +65,14 @@ class SplitsRemoteDataSource {
     String participantId, {
     required bool createTransaction,
     double? paidAmount,
+    String? categoryId,
   }) async {
     final response = await _client.patch<Map<String, dynamic>>(
       ApiEndpoints.splitParticipantPay(splitId, participantId),
       data: {
         'createTransaction': createTransaction,
         if (paidAmount != null) 'paidAmount': paidAmount,
+        if (categoryId != null) 'categoryId': categoryId,
       },
     );
     final data = response.data!['data'] as Map<String, dynamic>;

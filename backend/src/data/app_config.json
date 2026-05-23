@@ -1,0 +1,6 @@
+{
+  "minVersion": "1.0.0",
+  "latestVersion": "1.0.0",
+  "criticalUpdateMessage": "This is a required update. The current version of Hisaab is no longer supported and you must update to continue.",
+  "softUpdateMessage": "A new version of Hisaab is available with improvements and bug fixes."
+}

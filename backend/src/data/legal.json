@@ -1,6 +1,7 @@
 {
+  "policyVersion": "2026-05-23",
   "privacyPolicy": {
-    "lastUpdated": "May 2025",
+    "lastUpdated": "May 2026",
     "sections": [
       {
         "icon": "info_outline_rounded",
@@ -10,7 +11,7 @@
       {
         "icon": "folder_outlined",
         "title": "2. What Data We Collect",
-        "content": "Account Data:\n• Display name, currency preference, opening balance, and creation date (Not encrypted).\n• Email address (Not encrypted — required for login and emails).\n• Password (bcrypt hash only — never stored as plaintext).\n\nFinancial Records:\n• Transactions: Title & Note (AES-256-GCM encrypted). Amount, Type, Date, Category (Not encrypted).\n• Categories: Name, Emoji, Type, Limit (Not encrypted).\n• Dues: Title, Person's name, Note (AES-256-GCM encrypted). Amount, Date, Status (Not encrypted).\n• Splits: Title, Note, Participant names (AES-256-GCM encrypted). Amounts, Date (Not encrypted).\n• Savings: Total amount, Cash deduction (Not encrypted).\n• Wishlist: Title (AES-256-GCM encrypted). Emoji, URL, Price, Amount saved (Not encrypted).\n• Recurring: Title (AES-256-GCM encrypted). Amount, Type, Frequency, Next due date (Not encrypted).\n\nTokens & Technical Data:\n• Auth tokens are stored in device secure storage.\n• Server logs (IP, path, timestamp) retained for 30 days. IP is tracked in-memory for rate limiting."
+        "content": "Account Data:\n• Display name, currency preference, opening balance, and creation date (Not encrypted).\n• Email address (Not encrypted — required for login and emails).\n• Password (bcrypt hash only — never stored as plaintext).\n\nFinancial Records:\n• Transactions: Title & Note (AES-256-GCM encrypted). Amount, Type, Date, Category (Not encrypted).\n• Categories: Name, Emoji, Type, Limit (Not encrypted).\n• Dues: Title, Person's name, Note (AES-256-GCM encrypted). Amount, Date, Status (Not encrypted).\n• Splits: Title, Note, Participant names (AES-256-GCM encrypted). Amounts, Date (Not encrypted).\n• Savings: Total amount, Cash deduction (Not encrypted).\n• Wishlist: Title (AES-256-GCM encrypted). Emoji, URL, Price, Amount saved (Not encrypted).\n• Recurring: Title (AES-256-GCM encrypted). Amount, Type, Frequency, Next due date (Not encrypted).\n\nUPI Screenshot Data (on-device only, never uploaded):\n• When you share a UPI payment screenshot to Hisaab, the image is processed entirely on your device using Google ML Kit. Hisaab extracts: transaction amount, date, time, and payment direction (sent/received). The image file is not copied, stored, or transmitted by Hisaab.\n\nTokens & Technical Data:\n• Auth tokens are stored in device secure storage.\n• Server logs (IP, path, timestamp) retained for 30 days. IP is tracked in-memory for rate limiting."
       },
       {
         "icon": "lock_outline_rounded",
@@ -53,29 +54,34 @@
         "content": "California residents have the right to know, delete, and correct their personal information, and the right to non-discrimination. We do not sell or share your personal information. Contact us to exercise these rights."
       },
       {
+        "icon": "phone_android",
+        "title": "11. UPI Transaction Screenshot Sharing",
+        "content": "Hisaab includes an optional feature that lets you share a UPI payment screenshot (from apps like GPay, PhonePe, or Paytm) directly to Hisaab.\n\nHow it works:\n• You initiate the share from within the UPI app — Hisaab never accesses your gallery or camera on its own.\n• The image is processed entirely on your device using Google ML Kit Text Recognition (on-device OCR). No image data leaves your device.\n• Hisaab extracts: amount, date, time, and payment direction (expense or income). Merchant/payee name is never auto-populated.\n• The extracted fields are pre-filled in the Add Transaction form. You review and confirm before anything is saved.\n• Hisaab does not store or transmit the screenshot itself.\n\nThird-Party SDK: Google ML Kit Text Recognition (on-device model) is used for OCR. The model runs locally; no data is sent to Google's servers as part of this process. Google's ML Kit is subject to Google's own Privacy Policy."
+      },
+      {
         "icon": "child_care_rounded",
-        "title": "11. Children's Privacy",
+        "title": "12. Children's Privacy",
         "content": "Hisaab is not directed at children under the age of 13 (or 16 in the EEA). We do not knowingly collect personal data from minors. If you believe a minor has created an account, please contact us for prompt deletion."
       },
       {
         "icon": "security_rounded",
-        "title": "12. Security",
-        "content": "We protect your data using AES-256-GCM encryption, bcrypt hashing, JWT tokens, HTTPS, and rate limiting. However, no system is perfectly secure and we cannot guarantee absolute security."
+        "title": "13. Security",
+        "content": "We protect your data using AES-256-GCM encryption, bcrypt hashing, JWT tokens, HTTPS, and rate limiting. UPI screenshot OCR is performed entirely on-device using Google ML Kit — no image data is transmitted to our servers or to third parties. However, no system is perfectly secure and we cannot guarantee absolute security."
       },
       {
         "icon": "edit_note_rounded",
-        "title": "13. Changes to This Policy",
+        "title": "14. Changes to This Policy",
         "content": "We may update this Privacy Policy from time to time. For significant changes, we will notify users via email or an in-app notice."
       },
       {
         "icon": "mail_outline_rounded",
-        "title": "14. Contact Us",
+        "title": "15. Contact Us",
         "content": "If you have questions about this Privacy Policy or how we handle your data, please contact us at projecthisaab.app@gmail.com with the subject \"Privacy Inquiry\". We will respond within 14 business days."
       }
     ]
   },
   "termsOfService": {
-    "lastUpdated": "May 2025",
+    "lastUpdated": "May 2026",
     "sections": [
       {
         "icon": "handshake_outlined",
@@ -85,7 +91,7 @@
       {
         "icon": "description_outlined",
         "title": "2. Description of Service",
-        "content": "Hisaab is a personal finance tracking application. It allows you to record transactions, manage categories, track dues, split expenses, and set savings goals.\n\nHisaab is not a bank, payment processor, or financial institution. Nothing in the App constitutes financial, investment, tax, or legal advice."
+        "content": "Hisaab is a personal finance tracking application. It allows you to record transactions, manage categories, track dues, split expenses, set savings goals, and log UPI transactions by sharing payment screenshots from third-party UPI apps.\n\nHisaab is not a bank, payment processor, or financial institution. Nothing in the App constitutes financial, investment, tax, or legal advice."
       },
       {
         "icon": "person_outline_rounded",
@@ -108,13 +114,18 @@
         "content": "You own all financial data you enter. Our use of your data is governed by our Privacy Policy. We do not guarantee the availability or backup of your data. You are responsible for maintaining your own records."
       },
       {
+        "icon": "share_outlined",
+        "title": "7. UPI Screenshot Sharing Feature",
+        "content": "Hisaab provides an optional feature that allows you to share UPI payment screenshots from third-party apps (e.g. GPay, PhonePe, Paytm) to Hisaab for automatic pre-filling of the Add Transaction form.\n\nBy using this feature, you acknowledge that:\n• OCR processing is performed on-device using Google ML Kit. No image data is sent to Hisaab's servers.\n• Pre-filled transaction details are suggestions based on OCR output and may contain errors. You are responsible for reviewing and correcting data before saving.\n• Hisaab is not responsible for inaccuracies caused by OCR misreads, image quality, or unsupported UPI app formats.\n• This feature requires Android's Intent sharing mechanism. No permission to access your camera or gallery is requested by Hisaab — you initiate the share yourself from within the UPI app.\n• Google ML Kit's use is subject to Google's Terms of Service and Privacy Policy."
+      },
+      {
         "icon": "copyright_outlined",
-        "title": "7. Intellectual Property",
+        "title": "8. Intellectual Property",
         "content": "The Hisaab application, design, logo, and codebase are the property of the developer. You may not copy, modify, distribute, or create derivative works of the App without permission."
       },
       {
         "icon": "cloud_done_outlined",
-        "title": "8. Availability and Modifications",
+        "title": "9. Availability and Modifications",
         "content": "We may modify, suspend, or discontinue the Service at any time without notice. If we plan to permanently shut down, we will try to provide 30 days' notice via email. We are not liable for any loss resulting from changes to the Service."
       },
       {
@@ -125,12 +136,12 @@
       {
         "icon": "warning_amber_rounded",
         "title": "10. Disclaimer of Warranties",
-        "content": "The Service is provided \"as is\" and \"as available\". We do not warrant that the Service will be uninterrupted, error-free, or secure, or that any financial calculations are accurate. Verify important data with primary sources."
+        "content": "The Service is provided \"as is\" and \"as available\". We do not warrant that the Service will be uninterrupted, error-free, or secure, or that any financial calculations are accurate. This includes transaction data pre-filled from UPI screenshots via OCR, which may contain misread values. Verify important data with primary sources."
       },
       {
         "icon": "shield_outlined",
         "title": "11. Limitation of Liability",
-        "content": "To the fullest extent permitted by law, Hisaab and its developer shall not be liable for any indirect, incidental, or consequential damages, loss of data, or financial loss. Our total liability shall not exceed INR 0 (zero rupees)."
+        "content": "To the fullest extent permitted by law, Hisaab and its developer shall not be liable for any indirect, incidental, or consequential damages, loss of data, or financial loss, including any financial record inaccuracies resulting from OCR misreads of UPI screenshots. Our total liability shall not exceed INR 0 (zero rupees)."
       },
       {
         "icon": "gavel_rounded",

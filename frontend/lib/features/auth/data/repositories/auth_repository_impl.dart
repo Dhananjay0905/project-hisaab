@@ -33,8 +33,8 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message, fieldErrors: e.fieldErrors);
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -89,8 +89,8 @@ class AuthRepositoryImpl implements AuthRepository {
       throw AuthFailure(e.message);
     } on UnverifiedEmailException {
       throw const UnverifiedEmailFailure();
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -121,8 +121,8 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> forgotPassword(String email) async {
     try {
       await _remote.forgotPassword(email);
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -148,8 +148,8 @@ class AuthRepositoryImpl implements AuthRepository {
       return await _remote.getMe();
     } on UnauthorizedException catch (e) {
       throw AuthFailure(e.message);
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -161,8 +161,8 @@ class AuthRepositoryImpl implements AuthRepository {
       return await _remote.updateName(name);
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message);
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -174,8 +174,8 @@ class AuthRepositoryImpl implements AuthRepository {
       await _remote.requestEmailChange(newEmail);
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message);
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -193,8 +193,8 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     } on ValidationException catch (e) {
       throw ValidationFailure(e.message);
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -204,8 +204,8 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<DateTime> deleteAccount(String password) async {
     try {
       return await _remote.deleteAccount(password);
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }
@@ -244,8 +244,8 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> acceptPolicy() async {
     try {
       await _remote.acceptPolicy();
-    } on NetworkException {
-      throw const NetworkFailure();
+    } on NetworkException catch (e) {
+      throw NetworkFailure(e.message);
     } on AppException catch (e) {
       throw ServerFailure(e.message);
     }

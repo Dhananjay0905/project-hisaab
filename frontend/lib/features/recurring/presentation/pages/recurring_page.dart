@@ -12,6 +12,8 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/app_error_widget.dart';
+import '../../../../core/widgets/skeleton_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -59,15 +61,11 @@ class _RecurringPageState extends ConsumerState<RecurringPage> {
               ),
             ),
             asyncRecurring.when(
-              loading: () => const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, _) => SliverFillRemaining(
-                child: Center(
-                  child: Text('Failed to load recurring transactions',
-                      style: AppTypography.bodyMedium
-                          .copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                ),
+              loading: () => const RecurringSkeleton(),
+              error: (e, _) => AppErrorWidget.sliver(
+                title: 'Failed to load recurring transactions',
+                message: e.toString().replaceAll('Exception:', '').trim(),
+                onRetry: () => ref.invalidate(recurringProvider),
               ),
               data: (items) {
                 final active =

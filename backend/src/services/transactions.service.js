@@ -14,6 +14,7 @@
 const { PrismaClient, Prisma } = require('@prisma/client');
 const { createError } = require('../middleware/errorHandler');
 const { encrypt, decrypt, encryptOptional, decryptOptional } = require('../utils/encrypt');
+const { getUserBalance, assertSufficientBalance } = require('../utils/balance.utils');
 
 const prisma = new PrismaClient();
 
@@ -99,7 +100,7 @@ async function getTransactions(userId, query = {}) {
     : 'date';
   const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
 
-  const [total, rows] = await prisma.$transaction([
+  const [total, rows, aggregates] = await prisma.$transaction([
     prisma.transaction.count({ where }),
     prisma.transaction.findMany({
       where,
@@ -107,6 +108,11 @@ async function getTransactions(userId, query = {}) {
       orderBy: [{ [sortBy]: sortOrder }, { createdAt: 'desc' }],
       skip,
       take: limit,
+    }),
+    prisma.transaction.groupBy({
+      by: ['type'],
+      where,
+      _sum: { amount: true },
     }),
   ]);
 
@@ -124,6 +130,14 @@ async function getTransactions(userId, query = {}) {
     );
   }
 
+  // Compute totals from aggregate (covers ALL matching records, not just the loaded page)
+  const incomeTotal = parseFloat(
+    aggregates.find((a) => a.type === 'INCOME')?._sum?.amount ?? 0
+  );
+  const expenseTotal = parseFloat(
+    aggregates.find((a) => a.type === 'EXPENSE')?._sum?.amount ?? 0
+  );
+
   return {
     items,
     pagination: {
@@ -133,6 +147,11 @@ async function getTransactions(userId, query = {}) {
       pages: Math.ceil(total / limit),
       hasNext: page * limit < total,
       hasPrev: page > 1,
+    },
+    totals: {
+      incomeTotal,
+      expenseTotal,
+      net: incomeTotal - expenseTotal,
     },
   };
 }
@@ -152,6 +171,15 @@ async function getTransaction(userId, id) {
 
 async function createTransaction(userId, data) {
   const { title, note, amount, type, categoryId, date, excludeFromAnalytics } = data;
+
+  // ── Balance check (EXPENSE only) ──────────────────────────────────────────
+  if (type === 'EXPENSE') {
+    const balance = await getUserBalance(userId, prisma);
+    assertSufficientBalance(
+      balance - parseFloat(amount),
+      'Insufficient balance. This expense exceeds your current balance.'
+    );
+  }
 
   // Validate category ownership if provided
   if (categoryId) {
@@ -205,7 +233,25 @@ async function updateTransaction(userId, id, data) {
   if (!existing) throw createError('Transaction not found.', 404, 'NOT_FOUND');
 
   const { title, note, amount, type, categoryId, date, excludeFromAnalytics } = data;
-  const newType = type || existing.type;
+  const newType   = type   || existing.type;
+  const newAmount = amount !== undefined ? parseFloat(amount) : parseFloat(existing.amount);
+  const oldType   = existing.type;
+  const oldAmount = parseFloat(existing.amount);
+
+  // ── Balance check ─────────────────────────────────────────────────────────
+  // Compute what the balance will be after this edit by reversing the old
+  // transaction's effect and applying the new one.
+  //   Remove old:  EXPENSE → +oldAmount | INCOME → -oldAmount
+  //   Apply new:   EXPENSE → -newAmount | INCOME → +newAmount
+  const currentBalance = await getUserBalance(userId, prisma);
+  const balanceAfter =
+    currentBalance +
+    (oldType === 'EXPENSE' ? +oldAmount : -oldAmount) +
+    (newType === 'EXPENSE' ? -newAmount : +newAmount);
+  assertSufficientBalance(
+    balanceAfter,
+    'Insufficient balance. This change would push your balance below zero.'
+  );
 
   // Validate category if changing
   const newCategoryId = categoryId !== undefined ? categoryId : existing.categoryId;
@@ -260,6 +306,17 @@ async function deleteTransaction(userId, id) {
     where: { id, userId, deletedAt: null },
   });
   if (!existing) throw createError('Transaction not found.', 404, 'NOT_FOUND');
+
+  // ── Balance check (INCOME only) ───────────────────────────────────────────
+  // Deleting an INCOME transaction reduces the balance. Block if this would
+  // push the balance below zero.
+  if (existing.type === 'INCOME') {
+    const balance = await getUserBalance(userId, prisma);
+    assertSufficientBalance(
+      balance - parseFloat(existing.amount),
+      'Cannot delete this income. Removing it would push your balance below zero.'
+    );
+  }
 
   await prisma.transaction.update({
     where: { id },
