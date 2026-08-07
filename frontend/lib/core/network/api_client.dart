@@ -20,9 +20,9 @@ String get _fallbackUrl {
   }
 
   if (defaultTargetPlatform == TargetPlatform.android) {
-    // 192.168.29.104 is your PC's local network IP
+    // 192.168.29.191 is your PC's local network IP
     // This allows physical phones on the same Wi-Fi to reach your backend!
-    return 'http://192.168.29.104:3000/api';
+    return 'http://192.168.29.191:3000/api';
   }
 
   return 'http://localhost:3000/api'; // iOS and Desktop

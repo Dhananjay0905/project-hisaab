@@ -397,7 +397,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage>
                         left: AppSpacing.lg,
                         right: AppSpacing.lg,
                         top: AppSpacing.md,
-                        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+                        bottom: AppSpacing.lg,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

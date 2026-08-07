@@ -31,6 +31,7 @@ class UpiOcrService {
       final amount = _parseAmount(fullText);
       final date = _parseDate(fullText);
       final time = _parseTime(fullText);
+      final merchantName = _parseMerchantName(fullText);
       final isIncome = _detectIncome(fullText);
 
       // ── UPI receipt heuristic ──────────────────────────────────────────────
@@ -46,12 +47,34 @@ class UpiOcrService {
         amount: amount,
         date: date,
         time: time,
-        merchantName: null, // never auto-filled
+        merchantName: merchantName,
         isIncome: isIncome,
       );
     } finally {
       recognizer.close();
     }
+  }
+
+  // ─── Merchant Name Parsing ──────────────────────────────────────────────────
+
+  static String? _parseMerchantName(String text) {
+    final patterns = [
+      RegExp(r"(?:To|Paid to|Sent to|Transfer to)\s*:?\s*([A-Za-z0-9\s.&'\-]+)", caseSensitive: false),
+      RegExp(r"(?:From|Received from)\s*:?\s*([A-Za-z0-9\s.&'\-]+)", caseSensitive: false),
+    ];
+
+    for (final pattern in patterns) {
+      final matches = pattern.allMatches(text);
+      for (final match in matches) {
+        String name = match.group(1)!.split('\n').first.trim();
+        if (name.contains('@')) continue; // skip VPA line
+        name = name.replaceAll(RegExp(r'\s+\(.*?\)$'), '').trim();
+        if (name.isNotEmpty && name.length >= 3 && !name.toLowerCase().contains('transaction')) {
+          return name;
+        }
+      }
+    }
+    return null;
   }
 
   // ─── UPI Receipt Keyword Check ─────────────────────────────────────────────
@@ -64,9 +87,10 @@ class UpiOcrService {
     const keywords = [
       '₹', 'rs.', 'rs ',          // currency symbols / abbreviations
       'paid', 'sent', 'received',  // payment verbs
+      'completed', 'successful',   // payment statuses
       'upi', 'utr', 'ref no',      // UPI identifiers
       'transaction', 'txn',        // generic transaction markers
-      'gpay', 'google pay',        // GPay
+      'gpay', 'google pay', 'g pay', // GPay
       'phonepe', 'phone pe',       // PhonePe
       'paytm',                     // Paytm
       'bhim',                      // BHIM UPI
@@ -74,6 +98,8 @@ class UpiOcrService {
       'transfer', 'payment',       // generic
       'bank',                      // catches bank transfer screens
       'inr',                       // INR abbreviation
+      'to:', 'from:',              // recipient/sender markers
+      'state bank', 'sbi', 'hdfc', 'icici', 'axis',
     ];
     return keywords.any((kw) => lower.contains(kw));
   }
@@ -93,49 +119,29 @@ class UpiOcrService {
   // ─── Amount Parsing ────────────────────────────────────────────────────────
 
   static double? _parseAmount(String text) {
-    // Pattern order matters — most reliable first.
-    // Strategy: for each pattern we take the FIRST valid match (left-to-right
-    // in the text), not the largest. The "largest wins" strategy caused issues
-    // where OCR noise (e.g. a misread checkmark circle → "7") produced a
-    // spurious large number that beat the real amount.
     final patterns = [
       // ₹1,234.56 | ₹1234 | ₹ 1,234.56
-      // ₹\n88.00 also matches because \s* includes newlines.
       RegExp(r'₹\s*([\d,]+(?:\.\d{1,2})?)', caseSensitive: false),
-      // ML Kit sometimes misreads ₹ as ?, €, $, £
-      RegExp(r'(?:[?€£$])\s*([\d,]+(?:\.\d{1,2})?)', caseSensitive: false),
+      // ML Kit sometimes misreads ₹ as ?, €, $, £, #, *, ~, »
+      RegExp(r'(?:[?€£$#*~»>])\s*([\d,]+(?:\.\d{1,2})?)', caseSensitive: false),
       // ML Kit on some devices reads ₹ as a bare "R" (e.g. ₹88.00 → R88.00).
-      // Negative lookbehind ensures we don't match R inside a word like MANOHAR.
       RegExp(r'(?<![A-Za-z])R(\d[\d,]*(?:\.\d{1,2})?)', caseSensitive: false),
       // Rs. 500 | Rs 500.00
       RegExp(r'Rs\.?\s*([\d,]+(?:\.\d{1,2})?)', caseSensitive: false),
       // INR 200
       RegExp(r'INR\s*([\d,]+(?:\.\d{1,2})?)', caseSensitive: false),
       // Standalone number with commas or explicit 2 decimals on its own line
-      // e.g. "1,562.18" or "20.00" — only used when no currency prefix found.
-      RegExp(r'^\s*([1-9]\d{0,2}(?:,\d{2,3})+(?:\.\d{1,2})?|\d+\.\d{2})\s*$',
-          multiLine: true),
+      RegExp(r'^\s*([1-9]\d{0,2}(?:,\d{2,3})*(?:\.\d{1,2})?|\d+\.\d{2})\s*$', multiLine: true),
       // Plain integer alone on a line (GPay large font, ₹ is a separate block).
-      // Only fires when no currency symbol was present anywhere in the text
-      // (guarded below), and requires 2–7 digits to avoid ref numbers.
       RegExp(r'^\s*([1-9]\d{1,6})\s*$', multiLine: true),
     ];
 
-    // If the text contains a currency symbol/keyword (including the "R" misread),
-    // skip the plain-integer fallbacks (last 2 patterns) — the earlier patterns
-    // should handle it, and the fallbacks risk matching OCR noise.
-    final hasCurrencyContext = RegExp(
-      r'[₹$€£]|Rs\.?|INR|(?<![A-Za-z])R\d',
-      caseSensitive: false,
-    ).hasMatch(text);
-    final patternCount = hasCurrencyContext ? patterns.length - 2 : patterns.length;
-
-    for (int i = 0; i < patternCount; i++) {
+    for (int i = 0; i < patterns.length; i++) {
       final pattern = patterns[i];
       for (final m in pattern.allMatches(text)) {
         final raw = m.group(1)!.replaceAll(',', '');
         final value = double.tryParse(raw);
-        if (value != null && value > 0) {
+        if (value != null && value > 0 && value < 10000000) {
           return value; // first valid match wins
         }
       }

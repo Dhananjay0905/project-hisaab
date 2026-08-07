@@ -260,7 +260,7 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
     if (_selectedIndices.isNotEmpty) {
       double selectedTotal = 0;
       for (final idx in _selectedIndices) {
-        if (idx < topCats.length) {
+        if (idx >= 0 && idx < topCats.length) {
           selectedTotal += topCats[idx].spent;
         } else if (idx == topCats.length) {
           selectedTotal += othersSpent;
@@ -270,9 +270,9 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
 
       if (_selectedIndices.length == 1) {
         final idx = _selectedIndices.first;
-        if (idx < topCats.length) {
+        if (idx >= 0 && idx < topCats.length) {
           centerBottom = '${topCats[idx].emoji} ${topCats[idx].name}';
-        } else {
+        } else if (idx == topCats.length) {
           centerBottom = '🗂️ Others';
         }
       } else {
@@ -300,14 +300,16 @@ class _DonutWithBreakdownState extends ConsumerState<_DonutWithBreakdown> {
                 pieTouchData: PieTouchData(
                   touchCallback: (event, response) {
                     if (event is FlTapUpEvent && response?.touchedSection != null) {
-                      setState(() {
-                        final idx = response!.touchedSection!.touchedSectionIndex;
-                        if (_selectedIndices.contains(idx)) {
-                          _selectedIndices.remove(idx);
-                        } else {
-                          _selectedIndices.add(idx);
-                        }
-                      });
+                      final idx = response!.touchedSection!.touchedSectionIndex;
+                      if (idx >= 0 && idx < sections.length) {
+                        setState(() {
+                          if (_selectedIndices.contains(idx)) {
+                            _selectedIndices.remove(idx);
+                          } else {
+                            _selectedIndices.add(idx);
+                          }
+                        });
+                      }
                     }
                   },
                 ),

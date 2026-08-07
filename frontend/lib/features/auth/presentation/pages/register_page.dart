@@ -5,6 +5,7 @@
 /// and clear visual sections instead of cramming everything.
 library;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,6 +43,24 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   int _passwordStrength = 0; // 0=empty 1=weak 2=fair 3=strong
   bool _policyAccepted = false;
 
+  late final TapGestureRecognizer _privacyRecognizer;
+  late final TapGestureRecognizer _termsRecognizer;
+  late final TapGestureRecognizer _toggleCheckboxRecognizer1;
+  late final TapGestureRecognizer _toggleCheckboxRecognizer2;
+
+  @override
+  void initState() {
+    super.initState();
+    _privacyRecognizer = TapGestureRecognizer()
+      ..onTap = () => context.push('/privacy-policy');
+    _termsRecognizer = TapGestureRecognizer()
+      ..onTap = () => context.push('/terms-of-service');
+    _toggleCheckboxRecognizer1 = TapGestureRecognizer()
+      ..onTap = () => setState(() => _policyAccepted = !_policyAccepted);
+    _toggleCheckboxRecognizer2 = TapGestureRecognizer()
+      ..onTap = () => setState(() => _policyAccepted = !_policyAccepted);
+  }
+
   void _onPasswordChanged(String value) {
     int strength = 0;
     if (value.isNotEmpty) {
@@ -65,6 +84,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   @override
   void dispose() {
+    _privacyRecognizer.dispose();
+    _termsRecognizer.dispose();
+    _toggleCheckboxRecognizer1.dispose();
+    _toggleCheckboxRecognizer2.dispose();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
@@ -333,76 +356,65 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           title: 'Legal',
                           icon: Icons.gavel_rounded,
                           children: [
-                            GestureDetector(
-                              onTap: () {
-                                setState(() => _policyAccepted = !_policyAccepted);
-                              },
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: Checkbox(
-                                      value: _policyAccepted,
-                                      onChanged: (v) => setState(() => _policyAccepted = v ?? false),
-                                      activeColor: Theme.of(context).colorScheme.primary,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: Checkbox(
+                                    value: _policyAccepted,
+                                    onChanged: (v) => setState(() => _policyAccepted = v ?? false),
+                                    activeColor: Theme.of(context).colorScheme.primary,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      child: RichText(
-                                        text: TextSpan(
-                                          style: AppTypography.bodySmall.copyWith(
-                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                          ),
-                                          children: [
-                                            const TextSpan(text: 'I have read and agree to the '),
-                                            WidgetSpan(
-                                              alignment: PlaceholderAlignment.baseline,
-                                              baseline: TextBaseline.alphabetic,
-                                              child: GestureDetector(
-                                                onTap: () => context.push('/privacy-policy'),
-                                                child: Text(
-                                                  'Privacy Policy',
-                                                  style: AppTypography.bodySmall.copyWith(
-                                                    color: Theme.of(context).colorScheme.primary,
-                                                    fontWeight: FontWeight.w600,
-                                                    decoration: TextDecoration.underline,
-                                                    decorationColor: Theme.of(context).colorScheme.primary,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            const TextSpan(text: ' and '),
-                                            WidgetSpan(
-                                              alignment: PlaceholderAlignment.baseline,
-                                              baseline: TextBaseline.alphabetic,
-                                              child: GestureDetector(
-                                                onTap: () => context.push('/terms-of-service'),
-                                                child: Text(
-                                                  'Terms of Service',
-                                                  style: AppTypography.bodySmall.copyWith(
-                                                    color: Theme.of(context).colorScheme.primary,
-                                                    fontWeight: FontWeight.w600,
-                                                    decoration: TextDecoration.underline,
-                                                    decorationColor: Theme.of(context).colorScheme.primary,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text.rich(
+                                      TextSpan(
+                                        style: AppTypography.bodySmall.copyWith(
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         ),
+                                        children: [
+                                          TextSpan(
+                                            text: 'I have read and agree to the ',
+                                            recognizer: _toggleCheckboxRecognizer1,
+                                          ),
+                                          TextSpan(
+                                            text: 'Privacy Policy',
+                                            style: AppTypography.bodySmall.copyWith(
+                                              color: Theme.of(context).colorScheme.primary,
+                                              fontWeight: FontWeight.w600,
+                                              decoration: TextDecoration.underline,
+                                              decorationColor: Theme.of(context).colorScheme.primary,
+                                            ),
+                                            recognizer: _privacyRecognizer,
+                                          ),
+                                          TextSpan(
+                                            text: ' and ',
+                                            recognizer: _toggleCheckboxRecognizer2,
+                                          ),
+                                          TextSpan(
+                                            text: 'Terms of Service',
+                                            style: AppTypography.bodySmall.copyWith(
+                                              color: Theme.of(context).colorScheme.primary,
+                                              fontWeight: FontWeight.w600,
+                                              decoration: TextDecoration.underline,
+                                              decorationColor: Theme.of(context).colorScheme.primary,
+                                            ),
+                                            recognizer: _termsRecognizer,
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
