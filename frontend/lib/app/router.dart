@@ -109,17 +109,17 @@ class _RouterNotifier extends ChangeNotifier {
         loc.startsWith('/forgot-password') ||
         loc.startsWith('/reset-password');
 
-    // Legal viewer routes are always accessible (linked from acceptance page)
+    // Legal viewer routes are always accessible (linked from acceptance page, register page, etc.)
     final isLegalRoute = loc.startsWith('/privacy-policy') ||
         loc.startsWith('/terms-of-service');
 
     if (auth == null || auth is AuthUnauthenticated) {
-      return isAuthRoute ? null : '/login';
+      return (isAuthRoute || isLegalRoute) ? null : '/login';
     }
 
     if (auth is AuthSessionExpired) {
       // Redirect to login with a flag so the login page can show a snackbar
-      return isAuthRoute ? null : '/login?sessionExpired=true';
+      return (isAuthRoute || isLegalRoute) ? null : '/login?sessionExpired=true';
     }
 
     if (auth is AuthEmailUnverified) {
