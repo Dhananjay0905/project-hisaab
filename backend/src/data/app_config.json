@@ -2,5 +2,5 @@
   "minVersion": "1.0.0",
   "latestVersion": "1.1.0",
   "criticalUpdateMessage": "This is a required update. The current version of Hisaab is no longer supported and you must update to continue.",
-  "softUpdateMessage": "A new version of Hisaab (v1.1.0) is available with receipt scanner improvements and bug fixes."
+  "softUpdateMessage": "A new version of Hisaab (v1.1.0) is available with receipt scanner improvements, legal document viewer fixes, and UI enhancements."
 }
